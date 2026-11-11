@@ -1,6 +1,7 @@
-/* printer — Hebrew SQL & Python practice game */
+/* printer — Hebrew SQL & Python practice game (v2: learn + practice) */
 (function () {
-  const STORAGE_KEY = "printer-v1";
+  const STORAGE_KEY = "printer-v2";
+  const SESSION_SIZE = (window.Quiz && window.Quiz.SESSION_SIZE) || 6;
   const $app = document.getElementById("app");
   const TYPE_LABELS = {
     mcq: "רב-ברירה",
@@ -74,6 +75,21 @@
     return topics(track).find((t) => t.id === id);
   }
 
+  function lessonsFor(track) {
+    return track === "python" ? window.PYTHON_LESSONS || {} : window.SQL_LESSONS || {};
+  }
+
+  function metaFor(track, id) {
+    if (window.TOPIC_META && window.TOPIC_META.topicMeta) {
+      return window.TOPIC_META.topicMeta(track, id);
+    }
+    return { accent: "#2c5c50", soft: "#d7e6df" };
+  }
+
+  function brand() {
+    return window.PRINTER_BRAND || { name: "printer", tagline: "תרגול SQL ופייתון", svg: () => "", lockup: () => "", mark: () => "" };
+  }
+
   function trackProgress(track) {
     const list = topics(track);
     let stars = 0, done = 0;
@@ -102,9 +118,9 @@
   function hebText(s) {
     const esc = escapeHtml(s);
     const wrapped = esc.replace(
-      /(?:`([^`]+)`)|((?:[A-Za-z_][A-Za-z0-9_]*|\d+(?:\.\d+)?|[*=<>!%()[\]'/,.@:+\-]+)(?:\s+(?:[A-Za-z_][A-Za-z0-9_]*|\d+(?:\.\d+)?|[*=<>!%()[\]'/,.@:+\-]+))*(?:; )?)/g,
-      (full, tick, run) => {
-        const text = tick || run;
+      /(?:`([^`]+)`)|((?:[A-Za-z_][A-Za-z0-9_]*|\d+(?:\.\d+)?|[*=<>!%()[\]'/,.@:+\-]+)(?:\s+(?:[A-Za-z_][A-Za-z0-9_]*|\d+(?:\.\d+)?|[*=<>!%()[\]'/,.@:+\-]+))*(?:; )?)([?!]+)?/g,
+      (full, tick, run, punct) => {
+        const text = (tick || run) + (punct || "");
         if (!/[A-Za-z]/.test(text)) return full;
         return `<span class="ltr" dir="ltr">${text}</span>`;
       }
@@ -130,15 +146,29 @@
     toast._t = setTimeout(() => el.classList.remove("show"), 1800);
   }
 
+  const GEAR_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4Z"/><path d="M19.4 13.5a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8.17 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 8.17a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.14.64.73 1.1 1.39 1.1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1.4Z"/></svg>`;
+
   function topbar(opts) {
+    opts = opts || {};
     const back = opts.back
       ? `<button class="back" id="btn-back" aria-label="חזרה">→</button>`
-      : `<span style="width:40px"></span>`;
+      : "";
+    const title = opts.lockup
+      ? `<div class="top-lockup">${brand().wordmark(28, { onDark: true })}</div>`
+      : `<div class="top-lockup compact">
+          ${brand().wordmark(24, { onDark: true })}
+          <h1>${escapeHtml(opts.title || brand().name)}</h1>
+        </div>`;
+    const settingsClass = opts.settings ? "icon-btn settings-btn active" : "icon-btn settings-btn";
+    const chips = opts.lockup
+      ? `<span class="streak-chip" title="רצף ימים">🔥 ${state.streak || 0}</span>
+      <span class="xp-chip">⭐ ${state.xp || 0} XP</span>`
+      : "";
     return `<header class="topbar">
       ${back}
-      <h1>${escapeHtml(opts.title || "printer")}</h1>
-      <span class="streak-chip" title="רצף ימים">🔥 ${state.streak || 0}</span>
-      <span class="xp-chip">⭐ ${state.xp || 0} XP</span>
+      ${title}
+      ${chips}
+      <button class="${settingsClass}" id="btn-settings" aria-label="הגדרות" title="הגדרות">${GEAR_ICON}</button>
     </header>`;
   }
 
@@ -147,33 +177,75 @@
     if (b) b.addEventListener("click", () => { location.hash = hash; });
   }
 
+  function bindChrome(backHash) {
+    if (backHash) bindBack(backHash);
+    const s = document.getElementById("btn-settings");
+    if (s) s.addEventListener("click", () => { location.hash = "#settings"; });
+  }
+
+  function resetProgress() {
+    if (!confirm("לאפס את כל ההתקדמות, הנקודות והרצף?")) return;
+    state = defaultState();
+    saveState();
+    location.hash = "#home";
+    setTimeout(() => toast("ההתקדמות אופסה"), 0);
+  }
+
+  function renderSettings() {
+    hideToast();
+    $app.innerHTML = `
+      ${topbar({ title: "הגדרות", back: true, settings: true })}
+      <div class="screen settings-screen">
+        <h2>הגדרות</h2>
+        <p class="map-intro">ההתקדמות נשמרת במכשיר בלבד.</p>
+        <div class="settings-card">
+          <h3>איפוס התקדמות</h3>
+          <p>מוחק נקודות, רצף ימים, כוכבים ותוצאות תרגול שנשמרו במכשיר זה. הפעולה לא ניתנת לביטול.</p>
+          <button class="danger-btn" id="btn-reset" type="button">איפוס התקדמות</button>
+        </div>
+      </div>`;
+    bindChrome("#home");
+    document.getElementById("btn-reset").onclick = resetProgress;
+  }
+
+  function modeTabs(track, mode) {
+    return `<div class="mode-tabs" role="tablist">
+      <button type="button" class="${mode === "learn" ? "active" : ""}" id="tab-learn" role="tab" aria-selected="${mode === "learn"}">למידה</button>
+      <button type="button" class="${mode === "practice" ? "active" : ""}" id="tab-practice" role="tab" aria-selected="${mode === "practice"}">תרגול</button>
+    </div>`;
+  }
+
+  function bindModeTabs(track) {
+    const learn = document.getElementById("tab-learn");
+    const practice = document.getElementById("tab-practice");
+    if (learn) learn.onclick = () => { location.hash = "#" + track + "/learn"; };
+    if (practice) practice.onclick = () => { location.hash = "#" + track + "/practice"; };
+  }
+
   /* ---------- views ---------- */
   function renderHome() {
     hideToast();
     const sql = trackProgress("sql");
     const py = trackProgress("python");
     $app.innerHTML = `
-      ${topbar({ title: "printer", back: false })}
+      ${topbar({ title: brand().name, back: false, lockup: true })}
       <div class="screen">
         <div class="brand">
-          <div class="brand-mark">&lt;/&gt;</div>
-          <div>
-            <h2>printer</h2>
-            <p>תרגול SQL ופייתון, בקצב שלכם</p>
-          </div>
+          ${brand().wordmark(52)}
+          <p class="brand-tagline">${escapeHtml(brand().tagline)}</p>
         </div>
         <div class="stats-row">
           <div class="stat"><div class="k">נקודות</div><div class="v">${state.xp || 0} XP</div></div>
           <div class="stat"><div class="k">רצף ימים</div><div class="v">${state.streak || 0} 🔥</div></div>
           <div class="stat"><div class="k">כוכבים</div><div class="v">${sql.stars + py.stars}</div></div>
         </div>
-        <div class="section-label">בחרו תחום תרגול</div>
+        <div class="section-label">בחרו תחום</div>
         <div class="track-grid">
           <button class="track-card sql" id="go-sql">
             <div class="track-icon">🗄</div>
             <div style="flex:1">
               <h3>SQL</h3>
-              <p>${sql.done}/${sql.total} שלבים · ${sql.stars} כוכבים</p>
+              <p>${sql.done}/${sql.total} נושאים בתרגול · ${sql.stars} כוכבים</p>
               <div class="progress-mini"><span style="width:${(sql.stars / sql.maxStars) * 100}%"></span></div>
             </div>
           </button>
@@ -181,88 +253,130 @@
             <div class="track-icon">🐍</div>
             <div style="flex:1">
               <h3>פייתון</h3>
-              <p>${py.done}/${py.total} שלבים · ${py.stars} כוכבים</p>
+              <p>${py.done}/${py.total} נושאים בתרגול · ${py.stars} כוכבים</p>
               <div class="progress-mini"><span style="width:${(py.stars / py.maxStars) * 100}%"></span></div>
             </div>
           </button>
         </div>
-        <div class="sheet-row">
-          <button class="ghost-btn" id="go-sheet-sql">גיליון SQL</button>
-          <button class="ghost-btn" id="go-sheet-py">גיליון פייתון</button>
-        </div>
-        <p style="margin:18px 0 0;font-size:12px;color:var(--muted);text-align:center">
-          מנוע SQL רץ במכשיר (SQLite). כתיבת פייתון דורשת טעינה חד-פעמית מהרשת.
-          <br><button class="ghost-btn" id="btn-reset" style="margin-top:10px;font-size:12px;padding:8px 12px">איפוס התקדמות</button>
-        </p>
       </div>`;
-    document.getElementById("go-sql").onclick = () => (location.hash = "#sql");
-    document.getElementById("go-py").onclick = () => (location.hash = "#python");
-    document.getElementById("go-sheet-sql").onclick = () => (location.hash = "#sheet/sql");
-    document.getElementById("go-sheet-py").onclick = () => (location.hash = "#sheet/python");
-    document.getElementById("btn-reset").onclick = () => {
-      if (confirm("לאפס את כל ההתקדמות, הנקודות והרצף?")) {
-        state = defaultState();
-        saveState();
-        renderHome();
-        toast("ההתקדמות אופסה");
-      }
-    };
+    bindChrome();
+    document.getElementById("go-sql").onclick = () => (location.hash = "#sql/learn");
+    document.getElementById("go-py").onclick = () => (location.hash = "#python/learn");
   }
 
-  function renderMap(track) {
+  function renderMap(track, mode) {
     hideToast();
+    mode = mode === "practice" ? "practice" : "learn";
     const isPy = track === "python";
     const list = topics(track);
     const prog = trackProgress(track);
+    const intro = mode === "learn"
+      ? "בחרו נושא לשיעור. כל פריט מוסבר עם דוגמה. הלמידה לא פותחת תרגול אוטומטית."
+      : `בחרו נושא לתרגול. בכל סבב מופיעות עד ${SESSION_SIZE} שאלות אקראיות מתוך מאגר הנושא. ${prog.done} מתוך ${prog.total} נושאים כבר תורגלו · ${prog.stars} כוכבים.`;
     $app.innerHTML = `
-      ${topbar({ title: isPy ? "תרגול פייתון" : "תרגול SQL", back: true })}
+      ${topbar({ title: isPy ? (mode === "learn" ? "למידת פייתון" : "תרגול פייתון") : (mode === "learn" ? "למידת SQL" : "תרגול SQL"), back: true })}
       <div class="screen">
-        <p class="map-intro">${prog.done} מתוך ${prog.total} שלבים · ${prog.stars} כוכבים. כל השלבים פתוחים — אפשר להתחיל מכל נושא.</p>
-        <div class="level-list ${isPy ? "py" : ""}">
-          ${list.map((t, i) => {
+        ${modeTabs(track, mode)}
+        <p class="map-intro">${intro}</p>
+        <div class="level-list colorful ${isPy ? "py" : ""}">
+          ${list.map((t) => {
             const s = levelStats(track, t.id);
+            const meta = metaFor(track, t.id);
+            const n = t.questions.length;
+            const sub = mode === "learn"
+              ? "הסברים ודוגמאות"
+              : `${SESSION_SIZE} שאלות בסבב · מאגר ${n}` + (s.played ? " · שיא " + Math.round((s.best || 0) * 100) + "%" : "");
             return `<button class="level-node" data-id="${t.id}">
               <div class="level-dot">${escapeHtml(t.icon)}</div>
               <div style="flex:1">
                 <h3>${escapeHtml(t.title)}</h3>
-                <p>${t.questions.length} שאלות ${s.played ? "· ניסיון קודם " + Math.round((s.best || 0) * 100) + "%" : ""}</p>
+                <p>${sub}</p>
               </div>
-              ${starsHtml(s.stars || 0)}
+              ${mode === "practice" ? starsHtml(s.stars || 0) : ""}
             </button>`;
           }).join("")}
         </div>
-        <button class="ghost-btn" id="go-sheet" style="width:100%">גיליון עזר</button>
       </div>`;
-    bindBack("#home");
+    bindChrome("#home");
+    bindModeTabs(track);
     $app.querySelectorAll(".level-node").forEach((btn) => {
-      btn.onclick = () => startLevel(track, btn.dataset.id);
+      btn.onclick = () => {
+        if (mode === "learn") location.hash = `#learn/${track}/${btn.dataset.id}`;
+        else startLevel(track, btn.dataset.id);
+      };
     });
-    document.getElementById("go-sheet").onclick = () => (location.hash = "#sheet/" + track);
   }
 
-  function renderSheet(track) {
+  function renderLesson(track, topicId) {
     hideToast();
+    const topic = findTopic(track, topicId);
+    if (!topic) return (location.hash = "#" + track + "/learn");
+    const lesson = lessonsFor(track)[topicId] || { intro: topic.intro || "", items: [] };
     const isPy = track === "python";
-    const items = isPy ? window.CHEATSHEETS.PYTHON_SHEET : window.CHEATSHEETS.SQL_SHEET;
     $app.innerHTML = `
-      ${topbar({ title: isPy ? "גיליון פייתון" : "גיליון SQL", back: true })}
-      <div class="screen">
-        <p class="map-intro">סיכום קצר של הנושאים. הקישו על כותרת כדי לפתוח.</p>
-        ${items.map((it, i) => `
-          <div class="acc ${i === 0 ? "open" : ""}">
-            <button type="button">${escapeHtml(it.title)}</button>
-            <div class="acc-body">${it.body}</div>
-          </div>`).join("")}
+      ${topbar({ title: topic.short || topic.title, back: true })}
+      <div class="screen lesson-screen">
+        <div class="lesson-hero">
+          <div class="level-dot">${escapeHtml(topic.icon)}</div>
+          <div>
+            <h2>${escapeHtml(topic.title)}</h2>
+            <p>${escapeHtml(lesson.intro || topic.intro || "")}</p>
+          </div>
+        </div>
+        ${(lesson.items || []).map((it, idx) => `
+          <article class="lesson-item" data-idx="${idx}">
+            <h3><span class="term" dir="ltr">${escapeHtml(it.term || "")}</span> ${escapeHtml(it.title || "")}</h3>
+            <p>${escapeHtml(it.text || "")}</p>
+            ${it.code ? `<pre class="code">${escapeHtml(it.code)}</pre>` : ""}
+            <div class="lesson-sample" data-run="${it.run ? "1" : "0"}" data-idx="${idx}">
+              ${it.run ? `<div class="sample-label">תוצאה על המסד לדוגמה</div><div class="sample-body"><span class="muted">מריץ…</span></div>`
+                       : (it.sample ? `<div class="sample-label">תוצאה לדוגמה</div>${/[֐-׿]/.test(it.sample) ? `<p class="sample-note">${escapeHtml(it.sample)}</p>` : `<pre class="code sample-static">${escapeHtml(it.sample)}</pre>`}` : "")}
+            </div>
+          </article>
+        `).join("")}
+        <div class="lesson-footer">
+          <button class="primary-btn ${isPy ? "py" : ""}" id="go-practice-topic">לתרגול הנושא</button>
+          <button class="ghost-btn" id="back-learn-map">חזרה לנושאים</button>
+        </div>
       </div>`;
-    bindBack("#" + (isPy ? "python" : "sql"));
-    $app.querySelectorAll(".acc > button").forEach((btn) => {
-      btn.onclick = () => btn.parentElement.classList.toggle("open");
-    });
+    bindChrome("#" + track + "/learn");
+    document.getElementById("go-practice-topic").onclick = () => startLevel(track, topicId);
+    document.getElementById("back-learn-map").onclick = () => (location.hash = "#" + track + "/learn");
+    if (!isPy) hydrateLessonExamples(lesson.items || []);
+  }
+
+  async function hydrateLessonExamples(items) {
+    const nodes = [...document.querySelectorAll('.lesson-sample[data-run="1"]')];
+    if (!nodes.length) return;
+    try {
+      const engine = await ensureSql();
+      const db = window.SQLEngine.createDb(engine, window.SQL_SCHEMA.SCHEMA_SQL);
+      nodes.forEach((node) => {
+        const idx = Number(node.dataset.idx);
+        const it = items[idx];
+        const body = node.querySelector(".sample-body") || node;
+        try {
+          const rows = db.exec(it.code || "");
+          const last = rows && rows.length ? rows[rows.length - 1] : { columns: [], values: [] };
+          const res = { columns: last.columns || [], values: last.values || [] };
+          body.innerHTML = renderTable(res);
+        } catch (err) {
+          body.innerHTML = `<p class="q-note">לא ניתן להריץ את הדוגמה במנוע (SQLite): ${escapeHtml(err.message)}</p>`;
+        }
+      });
+      db.close();
+    } catch (err) {
+      nodes.forEach((node) => {
+        const body = node.querySelector(".sample-body") || node;
+        body.innerHTML = `<p class="q-note">${escapeHtml(err.message)}</p>`;
+      });
+    }
   }
 
   function startLevel(track, topicId) {
     const topic = findTopic(track, topicId);
-    if (!topic) return (location.hash = "#" + track);
+    if (!topic) return (location.hash = "#" + track + "/practice");
+    const quiz = window.Quiz ? window.Quiz.pickQuiz(topic.questions, SESSION_SIZE) : topic.questions.slice(0, SESSION_SIZE);
     session = {
       track,
       topicId,
@@ -271,6 +385,7 @@
       answered: {},
       hintUsed: {},
       started: Date.now(),
+      quiz,
     };
     location.hash = `#play/${track}/${topicId}`;
     renderPlay();
@@ -278,7 +393,8 @@
 
   function currentQ() {
     const topic = findTopic(session.track, session.topicId);
-    return { topic, q: topic.questions[session.index], total: topic.questions.length };
+    const quiz = session.quiz || topic.questions;
+    return { topic, q: quiz[session.index], total: quiz.length, quiz };
   }
 
   function renderPlay() {
@@ -306,11 +422,11 @@
           <div id="q-extra"></div>
         </div>
       </div>`;
-    bindBack("#" + session.track);
+    bindChrome("#" + session.track + "/practice");
     document.getElementById("btn-back").onclick = () => {
-      if (confirm("לצאת מהשלב? ההתקדמות בשלב הזה תישמר רק אם סיימתם אותו.")) {
+      if (confirm("לצאת מהתרגול? ההתקדמות בסבב הזה תישמר רק אם סיימתם אותו.")) {
         session = null;
-        location.hash = "#" + (isPy ? "python" : "sql");
+        location.hash = "#" + (isPy ? "python" : "sql") + "/practice";
       }
     };
     mountQuestion(q, done);
@@ -589,11 +705,11 @@
   }
 
   function addNext(actions, isPy) {
-    const { topic } = currentQ();
+    const { quiz } = currentQ();
     const btn = document.createElement("button");
     btn.className = "primary-btn" + (isPy ? " py" : "");
-    const last = session.index >= topic.questions.length - 1;
-    btn.textContent = last ? "סיכום השלב" : "לשאלה הבאה";
+    const last = session.index >= quiz.length - 1;
+    btn.textContent = last ? "סיכום הסבב" : "לשאלה הבאה";
     btn.onclick = () => {
       if (last) finishLevel();
       else {
@@ -606,13 +722,13 @@
   }
 
   function finishLevel() {
-    const { topic } = currentQ();
-    const total = topic.questions.length;
+    const { topic, quiz } = currentQ();
+    const total = quiz.length;
     let firstOk = 0;
-    topic.questions.forEach((q) => {
+    quiz.forEach((q) => {
       if (session.firstTry[q.id]) firstOk += 1;
     });
-    const ratio = firstOk / total;
+    const ratio = total ? firstOk / total : 0;
     const stars = ratio >= 1 ? 3 : ratio >= 0.8 ? 2 : ratio >= 0.6 ? 1 : 0;
     const key = levelKey(session.track, session.topicId);
     const prev = state.levels[key] || { stars: 0, best: 0, played: false };
@@ -625,22 +741,35 @@
     const track = session.track;
     session = null;
     $app.innerHTML = `
-      ${topbar({ title: "סיום שלב", back: true })}
+      ${topbar({ title: "סיום סבב", back: true })}
       <div class="screen">
         <div class="card complete">
           <div class="big-stars">${"★".repeat(stars)}${"☆".repeat(3 - stars)}</div>
           <h2>${escapeHtml(topic.title)}</h2>
           <p>בפעם הראשונה עניתם נכון על ${firstOk} מתוך ${total} (${Math.round(ratio * 100)}%).</p>
-          <p>נשמרו ${bestStars} כוכבים לשלב הזה.</p>
+          <p>נשמרו ${bestStars} כוכבים לנושא הזה.</p>
           <div class="btn-row">
-            <button class="primary-btn ${track === "python" ? "py" : ""}" id="back-map">חזרה למפה</button>
-            <button class="ghost-btn" id="retry">לתרגל שוב</button>
+            <button class="primary-btn ${track === "python" ? "py" : ""}" id="back-map">חזרה לתרגול</button>
+            <button class="ghost-btn" id="retry">סבב חדש</button>
+            <button class="ghost-btn" id="to-lesson">לשיעור</button>
           </div>
         </div>
       </div>`;
-    bindBack("#" + track);
-    document.getElementById("back-map").onclick = () => (location.hash = "#" + track);
+    bindChrome("#" + track + "/practice");
+    document.getElementById("back-map").onclick = () => (location.hash = "#" + track + "/practice");
     document.getElementById("retry").onclick = () => startLevel(track, topic.id);
+    document.getElementById("to-lesson").onclick = () => (location.hash = `#learn/${track}/${topic.id}`);
+  }
+
+  function completeQuizForShot() {
+    if (!session) return;
+    const { quiz } = currentQ();
+    quiz.forEach((q) => {
+      if (session.firstTry[q.id] === undefined) session.firstTry[q.id] = true;
+      if (!session.answered[q.id]) session.answered[q.id] = { ok: true };
+    });
+    session.index = Math.max(0, quiz.length - 1);
+    finishLevel();
   }
 
   /* ---------- router ---------- */
@@ -648,9 +777,16 @@
     const h = (location.hash || "#home").replace(/^#/, "");
     const parts = h.split("/");
     if (h === "" || h === "home") return renderHome();
-    if (h === "sql") return renderMap("sql");
-    if (h === "python") return renderMap("python");
-    if (parts[0] === "sheet") return renderSheet(parts[1] === "python" ? "python" : "sql");
+    if (h === "settings") return renderSettings();
+    if (h === "sql" || h === "sql/learn") return renderMap("sql", "learn");
+    if (h === "sql/practice") return renderMap("sql", "practice");
+    if (h === "python" || h === "python/learn") return renderMap("python", "learn");
+    if (h === "python/practice") return renderMap("python", "practice");
+    if (parts[0] === "sheet") return renderMap(parts[1] === "python" ? "python" : "sql", "learn");
+    if (parts[0] === "learn" && parts[1] && parts[2]) {
+      const track = parts[1] === "python" ? "python" : "sql";
+      return renderLesson(track, parts[2]);
+    }
     if (parts[0] === "play" && parts[1] && parts[2]) {
       const track = parts[1] === "python" ? "python" : "sql";
       if (!session || session.track !== track || session.topicId !== parts[2]) {
@@ -664,6 +800,8 @@
   window.addEventListener("hashchange", route);
   window.Printer = window.CodePractice = window.KodMaslul = {
     startLevel,
+    finishLevel,
+    completeQuizForShot,
     getSession: () => session,
     setSessionIndex(i) { if (session) { session.index = i; renderPlay(); } },
     getState: () => state,

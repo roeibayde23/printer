@@ -1,5 +1,5 @@
 /* Cache local assets for offline-ish play. Python write-code (Pyodide CDN) is cached opportunistically after first load. */
-const CACHE = "printer-v1";
+const CACHE = "printer-v4";
 const LOCAL = [
   "./",
   "./index.html",
@@ -8,10 +8,20 @@ const LOCAL = [
   "./js/schema.js",
   "./js/sql-engine.js",
   "./js/questions-sql.js",
+  "./js/questions-sql-v2.js",
+  "./js/questions-sql-writes-v4.js",
   "./js/questions-python.js",
-  "./js/cheatsheets.js",
+  "./js/questions-python-writes-v4.js",
+  "./js/lessons-sql.js",
+  "./js/lessons-python.js",
+  "./js/topics-meta.js",
+  "./js/brand.js",
+  "./js/quiz.js",
   "./js/python-engine.js",
   "./js/app.js",
+  "./icons/logo.svg",
+  "./icons/logo-maskable.svg",
+  "./icons/wordmark.svg",
   "./vendor/sql-wasm.js",
   "./vendor/sql-wasm.wasm",
   "./fonts/heebo-400.ttf",
@@ -23,6 +33,8 @@ const LOCAL = [
   "./icons/favicon.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
+  "./icons/icon-192-maskable.png",
+  "./icons/icon-512-maskable.png",
   "./icons/apple-touch-icon.png",
 ];
 

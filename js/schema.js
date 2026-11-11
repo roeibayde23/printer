@@ -68,6 +68,21 @@ INSERT INTO Orders (id, customer_id, product_id, quantity, order_date, discount)
   (8,  4, 8,  1,  '2026-04-02', NULL),
   (9,  6, 1,  1,  '2026-04-11', 0.20),
   (10, 1, 5, 10,  '2026-05-01', 0.00);
+
+CREATE TABLE Employees (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  city TEXT,
+  role TEXT,
+  manager_id INTEGER
+);
+
+INSERT INTO Employees (id, name, city, role, manager_id) VALUES
+  (1, 'Dana Levi',   'Tel Aviv',  'Manager', NULL),
+  (2, 'Yossi Cohen', 'Haifa',     'Sales',   1),
+  (3, 'Noa Mizrahi', 'Tel Aviv',  'Sales',   1),
+  (4, 'Avi Peretz',  'Jerusalem', 'Support', 2),
+  (5, 'Maya Katz',   'Haifa',     'Support', 2);
 `.trim();
 
   const TABLE_INFO = [
@@ -85,6 +100,11 @@ INSERT INTO Orders (id, customer_id, product_id, quantity, order_date, discount)
       name: "Orders",
       title: "הזמנות",
       columns: ["id", "customer_id", "product_id", "quantity", "order_date", "discount"],
+    },
+    {
+      name: "Employees",
+      title: "עובדים",
+      columns: ["id", "name", "city", "role", "manager_id"],
     },
   ];
 
