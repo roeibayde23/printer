@@ -191,21 +191,189 @@
     setTimeout(() => toast("ההתקדמות אופסה"), 0);
   }
 
+
+  const FIXES_KEY = "printer-fixes";
+  const FIX_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M9 7V5h6v2M8 7l.7 12h6.6L16 7"/></svg>';
+  const ICON = {
+    list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg>',
+    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+    eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+    reset: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
+  };
+  function loadFixes() {
+    try {
+      const list = JSON.parse(localStorage.getItem(FIXES_KEY) || "[]");
+      return Array.isArray(list) ? list.filter((x) => x && typeof x.id === "string" && typeof x.text === "string") : [];
+    } catch { return []; }
+  }
+  function saveFixes(list) {
+    try { localStorage.setItem(FIXES_KEY, JSON.stringify(list)); } catch {}
+  }
+  function newFixId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function fixesCountLabel(list) {
+    const open = list.filter((x) => !x.done).length;
+    const done = list.length - open;
+    if (!list.length) return "אין תיקונים עדיין";
+    const o = open === 1 ? "1 פתוח" : open + " פתוחים";
+    if (!done) return o;
+    return o + " · " + (done === 1 ? "1 בוצע" : done + " בוצעו");
+  }
+  function sortedFixes(list) {
+    return list.slice().sort((a, b) => (a.done === b.done ? (a.at || 0) - (b.at || 0) : a.done ? 1 : -1));
+  }
+  function updateFixesCount() {
+    const el = document.getElementById("fixes-count");
+    if (el) el.textContent = fixesCountLabel(loadFixes());
+  }
+  function fixesRowHtml() {
+    const sub = escapeHtml(fixesCountLabel(loadFixes()));
+    return `<section class="sgroup" id="fixes-wrap">
+        <div class="srow" id="fixes-row">
+          <span class="srow-ic">${ICON.list}</span>
+          <span class="srow-text"><b>תיקונים</b><small id="fixes-count">${sub}</small></span>
+          <button type="button" class="srow-iconbtn" id="fix-add-open" aria-label="הוספת תיקון">${ICON.plus}</button>
+          <button type="button" class="srow-iconbtn" id="fix-list-open" aria-label="צפייה בתיקונים">${ICON.eye}</button>
+        </div>
+      </section>`;
+  }
+  function fixRowsHtml() {
+    const list = sortedFixes(loadFixes());
+    if (!list.length) return '<li class="fix-empty">עוד אין תיקונים. תרשמו כאן מה לתקן.</li>';
+    return list.map((item) => `<li class="fix-row${item.done ? " is-done" : ""}" data-fix-id="${escapeHtml(item.id)}"><button type="button" class="fix-check${item.done ? " done" : ""}" data-fix-toggle="${escapeHtml(item.id)}" aria-pressed="${item.done ? "true" : "false"}" aria-label="${item.done ? "סימון כלא בוצע" : "סימון כבוצע"}">${item.done ? "✓" : ""}</button><button type="button" class="fix-text${item.done ? " done" : ""}" data-fix-edit="${escapeHtml(item.id)}">${escapeHtml(item.text)}</button><button type="button" class="fix-del" data-fix-del="${escapeHtml(item.id)}" aria-label="מחיקת התיקון">${FIX_TRASH}</button></li>`).join("");
+  }
+  function closePrinterSheet() {
+    document.getElementById("printer-sheet")?.remove();
+    document.body.classList.remove("sheet-open");
+  }
+  function openPrinterSheet(html, label) {
+    closePrinterSheet();
+    const s = document.createElement("div");
+    s.id = "printer-sheet";
+    s.className = "printer-sheet";
+    s.innerHTML = `<div class="printer-sheet-inner" role="dialog" aria-modal="true" aria-label="${escapeHtml(label || "")}"><div class="sheet-handle" aria-hidden="true"></div>${html}</div>`;
+    s.addEventListener("click", (e) => { if (e.target === s) closePrinterSheet(); });
+    document.body.append(s);
+    document.body.classList.add("sheet-open");
+    return s;
+  }
+  function openFixAddSheet() {
+    const s = openPrinterSheet(`<h3>תיקון חדש</h3><label>מה לתקן?<input id="fix-input" maxlength="200" placeholder="מה לתקן?" autocomplete="off" enterkeyhint="done"></label><div class="sheet-actions"><button class="primary-btn" id="fix-add" type="button">הוספה</button><button class="ghost-btn" id="fix-add-cancel" type="button">ביטול</button></div>`, "תיקון חדש");
+    const input = s.querySelector("#fix-input");
+    const add = () => {
+      const text = (input.value || "").trim();
+      if (!text) { input.focus(); return; }
+      const list = loadFixes();
+      list.push({ id: newFixId(), text, done: false, at: Date.now() });
+      saveFixes(list);
+      updateFixesCount();
+      closePrinterSheet();
+      toast("נוסף לרשימת התיקונים");
+    };
+    s.querySelector("#fix-add").onclick = add;
+    s.querySelector("#fix-add-cancel").onclick = closePrinterSheet;
+    input.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); add(); } };
+    setTimeout(() => input.focus(), 50);
+  }
+  function bindFixListSheet(s) {
+    const listEl = s.querySelector(".fixes-list");
+    const clear = s.querySelector("#fix-clear-done");
+    const refresh = () => {
+      listEl.innerHTML = fixRowsHtml();
+      const hasDone = loadFixes().some((x) => x.done);
+      if (clear) clear.disabled = !hasDone;
+      const cap = s.querySelector("#fixes-sheet-count");
+      if (cap) cap.textContent = fixesCountLabel(loadFixes());
+      updateFixesCount();
+    };
+    s.querySelector(".fixes-list")?.parentElement.addEventListener("click", (e) => {
+      const tog = e.target.closest("[data-fix-toggle]");
+      if (tog) {
+        const list = loadFixes();
+        const it = list.find((x) => x.id === tog.dataset.fixToggle);
+        if (!it) return;
+        it.done = !it.done;
+        saveFixes(list);
+        refresh();
+        return;
+      }
+      const del = e.target.closest("[data-fix-del]");
+      if (del) {
+        saveFixes(loadFixes().filter((x) => x.id !== del.dataset.fixDel));
+        refresh();
+        return;
+      }
+      const ed = e.target.closest("[data-fix-edit]");
+      if (ed) startFixEdit(ed.dataset.fixEdit, refresh);
+    });
+    if (clear) clear.onclick = () => {
+      const list = loadFixes();
+      if (!list.some((x) => x.done)) { toast("אין תיקונים שבוצעו"); return; }
+      saveFixes(list.filter((x) => !x.done));
+      refresh();
+      toast("התיקונים שבוצעו נוקו");
+    };
+  }
+  function openFixListSheet() {
+    const hasDone = loadFixes().some((x) => x.done);
+    const s = openPrinterSheet(`<h3>תיקונים</h3><p class="sheet-sub" id="fixes-sheet-count">${escapeHtml(fixesCountLabel(loadFixes()))}</p><ul class="fixes-list">${fixRowsHtml()}</ul><button class="ghost-btn" id="fix-clear-done" type="button"${hasDone ? "" : " disabled"}>נקה שבוצעו</button>`, "תיקונים");
+    bindFixListSheet(s);
+  }
+  function startFixEdit(id, after) {
+    const row = document.querySelector('[data-fix-id="' + CSS.escape(id) + '"]');
+    if (!row || row.querySelector(".fix-edit")) return;
+    const item = loadFixes().find((x) => x.id === id);
+    if (!item) return;
+    const btn = row.querySelector(".fix-text");
+    const input = document.createElement("input");
+    input.className = "fix-edit";
+    input.value = item.text;
+    input.maxLength = 200;
+    btn.replaceWith(input);
+    input.focus();
+    input.select();
+    const commit = (ok) => {
+      if (input.dataset.closed) return;
+      input.dataset.closed = "1";
+      const text = input.value.trim();
+      if (ok && text && text !== item.text) {
+        const list = loadFixes();
+        const it = list.find((x) => x.id === id);
+        if (it) { it.text = text; saveFixes(list); }
+      }
+      if (typeof after === "function") after();
+    };
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); commit(true); }
+      if (e.key === "Escape") { e.preventDefault(); commit(false); }
+    });
+    input.addEventListener("blur", () => commit(true));
+  }
+  function bindFixes() {
+    const add = document.getElementById("fix-add-open");
+    const list = document.getElementById("fix-list-open");
+    if (add) add.onclick = (e) => { e.preventDefault(); e.stopPropagation(); openFixAddSheet(); };
+    if (list) list.onclick = (e) => { e.preventDefault(); e.stopPropagation(); openFixListSheet(); };
+  }
+
   function renderSettings() {
     hideToast();
     $app.innerHTML = `
       ${topbar({ title: "הגדרות", back: true, settings: true })}
       <div class="screen settings-screen">
         <h2>הגדרות</h2>
-        <p class="map-intro">ההתקדמות נשמרת במכשיר בלבד.</p>
-        <div class="settings-card">
-          <h3>איפוס התקדמות</h3>
-          <p>מוחק נקודות, רצף ימים, כוכבים ותוצאות תרגול שנשמרו במכשיר זה. הפעולה לא ניתנת לביטול.</p>
-          <button class="danger-btn" id="btn-reset" type="button">איפוס התקדמות</button>
-        </div>
+        ${fixesRowHtml()}
+        <div class="setlabel">התקדמות</div>
+        <section class="sgroup">
+          <div class="srow">
+            <span class="srow-ic">${ICON.reset}</span>
+            <span class="srow-text"><b>איפוס התקדמות</b><small>מוחק נקודות, רצף וכוכבים שנשמרו במכשיר זה</small></span>
+            <button class="srow-btn danger" id="btn-reset" type="button">איפוס</button>
+          </div>
+        </section>
       </div>`;
     bindChrome("#home");
     document.getElementById("btn-reset").onclick = resetProgress;
+    bindFixes();
   }
 
   function modeTabs(track, mode) {
