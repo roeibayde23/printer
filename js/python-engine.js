@@ -1,6 +1,6 @@
 /* Browser Python runner (Pyodide). Lazy-loaded from the CDN on first use. */
 (function (root) {
-  const PYODIDE_CDN = "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/";
+  const PYODIDE_CDN = "https://cdn.jsdelivr.net/pyodide/v0.29.5/full/";
   let pyodidePromise = null;
   let pyodide = null;
 
@@ -24,7 +24,18 @@
           document.head.appendChild(s);
         });
       }
-      const engine = await loadPyodide({ indexURL: PYODIDE_CDN });
+      const engine = await loadPyodide({
+        indexURL: PYODIDE_CDN,
+        // Emscripten otherwise sets LANG from navigator.language (e.g. he_IL.UTF-8),
+        // which made Pyodide <= 0.27 crash at init_fs_encoding on Hebrew/Arabic locales.
+        env: {
+          LANG: "C.UTF-8",
+          LC_ALL: "C.UTF-8",
+          PYTHONIOENCODING: "utf-8",
+          PYTHONUTF8: "1",
+        },
+        args: ["-X", "utf8"],
+      });
       pyodide = engine;
       if (onStatus) onStatus("ready");
       return engine;
@@ -86,10 +97,30 @@
     if (onStatus) onStatus("ready");
   }
 
+  function engineErrorResult(err) {
+    return {
+      ok: false,
+      engineError: true,
+      error: err && (err.message || String(err)) || "engine",
+      stdout: "",
+      expectedStdout: "",
+      tests: [],
+    };
+  }
+
   async function gradePython(question, studentCode, onStatus) {
-    const engine = await loadPyodideEngine(onStatus);
+    let engine;
+    try {
+      engine = await loadPyodideEngine(onStatus);
+    } catch (err) {
+      return engineErrorResult(err);
+    }
     const code = String(studentCode || "");
-    await ensurePackages(engine, neededPackages(question, code), onStatus);
+    try {
+      await ensurePackages(engine, neededPackages(question, code), onStatus);
+    } catch (err) {
+      return engineErrorResult(err);
+    }
     if (!code.trim()) {
       return { ok: false, error: "empty", stdout: "", expectedStdout: "", tests: [] };
     }

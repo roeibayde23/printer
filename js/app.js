@@ -1062,11 +1062,21 @@
         } else {
           toast("טוען את מנוע פייתון…");
           const grade = await window.PythonEngine.gradePython(q, code, () => {});
+          if (grade && grade.engineError) {
+            hideToast();
+            showPythonEngineError(q);
+            return;
+          }
           result.ok = !!grade.ok;
           result.detail = grade;
         }
       }
     } catch (err) {
+      if (usesPython(session.track) && q.type === "write") {
+        hideToast();
+        showPythonEngineError(q);
+        return;
+      }
       result.ok = false;
       result.detail = { error: err.message };
     }
@@ -1089,6 +1099,34 @@
     actions.innerHTML = "";
     showFeedback(q, result);
     addNext(actions, usesPython(session.track));
+  }
+
+  function showPythonEngineError(q) {
+    const area = document.getElementById("code-area");
+    if (area) area.disabled = false;
+    const checkBtn = document.getElementById("btn-check");
+    if (checkBtn) checkBtn.disabled = false;
+    const extra = document.getElementById("q-extra");
+    if (extra) {
+      extra.innerHTML = `<div class="feedback bad engine-error" role="alert">
+        <h4>הפייתון לא נטען, נסו שוב</h4>
+        <p>טעינת מנוע פייתון נכשלה. זה לא קשור לקוד שכתבתם. בדקו את החיבור לרשת ונסו שוב.</p>
+      </div>`;
+    }
+    const actions = document.getElementById("q-actions");
+    if (actions) {
+      actions.innerHTML = "";
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.id = "btn-retry-engine";
+      btn.className = "primary-btn py";
+      btn.textContent = "נסו שוב";
+      btn.onclick = () => {
+        if (extra) extra.innerHTML = "";
+        submitQuestion(q);
+      };
+      actions.appendChild(btn);
+    }
   }
 
   function showFeedback(q, result) {
