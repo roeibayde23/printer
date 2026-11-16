@@ -67,8 +67,29 @@
     return state.levels[levelKey(track, id)] || { stars: 0, best: 0, played: false };
   }
 
+  function parseTrack(name) {
+    if (name === "python" || name === "data") return name;
+    return "sql";
+  }
+
+  function usesPython(track) {
+    return track === "python" || track === "data";
+  }
+
+  function isSql(track) {
+    return track === "sql";
+  }
+
+  function trackLabel(track) {
+    if (track === "python") return "פייתון";
+    if (track === "data") return "מדעי הנתונים";
+    return "SQL";
+  }
+
   function topics(track) {
-    return track === "python" ? window.PYTHON_TOPICS : window.SQL_TOPICS;
+    if (track === "python") return window.PYTHON_TOPICS || [];
+    if (track === "data") return window.DATA_TOPICS || [];
+    return window.SQL_TOPICS || [];
   }
 
   function findTopic(track, id) {
@@ -76,7 +97,97 @@
   }
 
   function lessonsFor(track) {
-    return track === "python" ? window.PYTHON_LESSONS || {} : window.SQL_LESSONS || {};
+    if (track === "python") return window.PYTHON_LESSONS || {};
+    if (track === "data") return window.DATA_LESSONS || {};
+    return window.SQL_LESSONS || {};
+  }
+
+  function chaptersFor(track) {
+    if (window.TOPIC_META && window.TOPIC_META.chaptersFor) {
+      return window.TOPIC_META.chaptersFor(track) || [];
+    }
+    return [];
+  }
+
+  const CHAPTER_STATE_KEY = "printer-chapters-v1";
+  const learnSearchQuery = { sql: "", python: "", data: "" };
+  let pendingLearnJump = null;
+
+  function loadChapterState() {
+    try { return JSON.parse(sessionStorage.getItem(CHAPTER_STATE_KEY) || "{}"); } catch (e) { return {}; }
+  }
+
+  function saveChapterOpen(track, chapterId, open) {
+    const all = loadChapterState();
+    if (!all[track]) all[track] = {};
+    all[track][chapterId] = !!open;
+    try { sessionStorage.setItem(CHAPTER_STATE_KEY, JSON.stringify(all)); } catch (e) {}
+  }
+
+  function isChapterOpen(track, chapterId, isFirst) {
+    const all = loadChapterState();
+    const t = all[track] || {};
+    if (Object.prototype.hasOwnProperty.call(t, chapterId)) return !!t[chapterId];
+    return !!isFirst;
+  }
+
+  function searchHay(parts) {
+    return parts.filter(Boolean).join(" \n ").toLowerCase();
+  }
+
+  function lessonSearchItems(track, topic) {
+    const lesson = lessonsFor(track)[topic.id] || { intro: topic.intro || "", items: [] };
+    const rows = [];
+    const topicHay = searchHay([topic.title, topic.short, topic.intro, lesson.intro]);
+    rows.push({ kind: "topic", idx: -1, title: topic.title, hay: topicHay, snippet: topic.intro || lesson.intro || "" });
+    (lesson.items || []).forEach((it, idx) => {
+      const hay = searchHay([it.term, it.title, it.text, it.code, it.sample]);
+      rows.push({
+        kind: "item",
+        idx,
+        title: ((it.term || "") + " " + (it.title || "")).trim(),
+        hay,
+        snippet: it.text || it.code || "",
+      });
+    });
+    return rows;
+  }
+
+  function searchLearn(track, raw) {
+    const q = String(raw || "").trim().toLowerCase();
+    if (!q) return [];
+    const chapters = chaptersFor(track);
+    const list = topics(track);
+    const byId = Object.fromEntries(list.map((t) => [t.id, t]));
+    const grouped = [];
+    const used = new Set();
+    function addChapter(ch) {
+      const hits = [];
+      (ch.topics || []).forEach((id) => {
+        used.add(id);
+        const topic = byId[id];
+        if (!topic) return;
+        lessonSearchItems(track, topic).forEach((row) => {
+          if (row.hay.includes(q)) hits.push({ topic, row });
+        });
+      });
+      if (hits.length) grouped.push({ chapter: ch, hits });
+    }
+    chapters.forEach(addChapter);
+    const leftover = list.filter((t) => !used.has(t.id));
+    if (leftover.length) addChapter({ id: "more", title: "עוד", topics: leftover.map((t) => t.id) });
+    return grouped;
+  }
+
+  function snippetAround(text, q) {
+    const src = String(text || "").replace(/\s+/g, " ").trim();
+    if (!src) return "";
+    const lower = src.toLowerCase();
+    const i = lower.indexOf(q.toLowerCase());
+    if (i < 0) return src.slice(0, 120);
+    const start = Math.max(0, i - 32);
+    const end = Math.min(src.length, i + q.length + 48);
+    return (start ? "…" : "") + src.slice(start, end) + (end < src.length ? "…" : "");
   }
 
   function metaFor(track, id) {
@@ -87,7 +198,7 @@
   }
 
   function brand() {
-    return window.PRINTER_BRAND || { name: "printer", tagline: "תרגול SQL ופייתון", svg: () => "", lockup: () => "", mark: () => "" };
+    return window.PRINTER_BRAND || { name: "printer", tagline: "תרגול SQL, פייתון ומדעי הנתונים", svg: () => "", lockup: () => "", mark: () => "" };
   }
 
   function trackProgress(track) {
@@ -125,7 +236,7 @@
         return `<span class="ltr" dir="ltr">${text}</span>`;
       }
     );
-    return wrapped;
+    return wrapped.replace(/(\[[0-9,.\s]+\])/g, '<span class="ltr" dir="ltr">$1</span>');
   }
 
   function hideToast() {
@@ -395,6 +506,7 @@
     hideToast();
     const sql = trackProgress("sql");
     const py = trackProgress("python");
+    const data = trackProgress("data");
     $app.innerHTML = `
       ${topbar({ title: brand().name, back: false, lockup: true })}
       <div class="screen">
@@ -405,7 +517,7 @@
         <div class="stats-row">
           <div class="stat"><div class="k">נקודות</div><div class="v">${state.xp || 0} XP</div></div>
           <div class="stat"><div class="k">רצף ימים</div><div class="v">${state.streak || 0} 🔥</div></div>
-          <div class="stat"><div class="k">כוכבים</div><div class="v">${sql.stars + py.stars}</div></div>
+          <div class="stat"><div class="k">כוכבים</div><div class="v">${sql.stars + py.stars + data.stars}</div></div>
         </div>
         <div class="section-label">בחרו תחום</div>
         <div class="track-grid">
@@ -425,49 +537,67 @@
               <div class="progress-mini"><span style="width:${(py.stars / py.maxStars) * 100}%"></span></div>
             </div>
           </button>
+          <button class="track-card data" id="go-data">
+            <div class="track-icon">📊</div>
+            <div style="flex:1">
+              <h3>מדעי הנתונים</h3>
+              <p>${data.done}/${data.total} נושאים בתרגול · ${data.stars} כוכבים</p>
+              <div class="progress-mini"><span style="width:${data.maxStars ? (data.stars / data.maxStars) * 100 : 0}%"></span></div>
+            </div>
+          </button>
         </div>
       </div>`;
     bindChrome();
     document.getElementById("go-sql").onclick = () => (location.hash = "#sql/learn");
     document.getElementById("go-py").onclick = () => (location.hash = "#python/learn");
+    const goData = document.getElementById("go-data");
+    if (goData) goData.onclick = () => (location.hash = "#data/learn");
   }
 
-  function renderMap(track, mode) {
-    hideToast();
-    mode = mode === "practice" ? "practice" : "learn";
-    const isPy = track === "python";
+  function topicNodeHtml(track, mode, t) {
+    const s = levelStats(track, t.id);
+    const n = t.questions.length;
+    const sub = mode === "learn"
+      ? "הסברים ודוגמאות"
+      : `${SESSION_SIZE} שאלות בסבב · מאגר ${n}` + (s.played ? " · שיא " + Math.round((s.best || 0) * 100) + "%" : "");
+    return `<button class="level-node" type="button" data-id="${t.id}">
+      <div class="level-dot">${escapeHtml(t.icon)}</div>
+      <div style="flex:1">
+        <h3>${escapeHtml(t.title)}</h3>
+        <p>${sub}</p>
+      </div>
+      ${mode === "practice" ? starsHtml(s.stars || 0) : ""}
+    </button>`;
+  }
+
+  function chaptersHtml(track, mode) {
     const list = topics(track);
-    const prog = trackProgress(track);
-    const intro = mode === "learn"
-      ? "בחרו נושא לשיעור. כל פריט מוסבר עם דוגמה. הלמידה לא פותחת תרגול אוטומטית."
-      : `בחרו נושא לתרגול. בכל סבב מופיעות עד ${SESSION_SIZE} שאלות אקראיות מתוך מאגר הנושא. ${prog.done} מתוך ${prog.total} נושאים כבר תורגלו · ${prog.stars} כוכבים.`;
-    $app.innerHTML = `
-      ${topbar({ title: isPy ? (mode === "learn" ? "למידת פייתון" : "תרגול פייתון") : (mode === "learn" ? "למידת SQL" : "תרגול SQL"), back: true })}
-      <div class="screen">
-        ${modeTabs(track, mode)}
-        <p class="map-intro">${intro}</p>
-        <div class="level-list colorful ${isPy ? "py" : ""}">
-          ${list.map((t) => {
-            const s = levelStats(track, t.id);
-            const meta = metaFor(track, t.id);
-            const n = t.questions.length;
-            const sub = mode === "learn"
-              ? "הסברים ודוגמאות"
-              : `${SESSION_SIZE} שאלות בסבב · מאגר ${n}` + (s.played ? " · שיא " + Math.round((s.best || 0) * 100) + "%" : "");
-            return `<button class="level-node" data-id="${t.id}">
-              <div class="level-dot">${escapeHtml(t.icon)}</div>
-              <div style="flex:1">
-                <h3>${escapeHtml(t.title)}</h3>
-                <p>${sub}</p>
-              </div>
-              ${mode === "practice" ? starsHtml(s.stars || 0) : ""}
-            </button>`;
-          }).join("")}
-        </div>
-      </div>`;
-    bindChrome("#home");
-    bindModeTabs(track);
-    $app.querySelectorAll(".level-node").forEach((btn) => {
+    const byId = Object.fromEntries(list.map((t) => [t.id, t]));
+    const chapters = chaptersFor(track);
+    const used = new Set();
+    const blocks = [];
+    const chs = chapters.length ? chapters.slice() : [{ id: "all", title: "נושאים", topics: list.map((t) => t.id) }];
+    const leftover = list.filter((t) => !chs.some((c) => (c.topics || []).includes(t.id)));
+    if (leftover.length) chs.push({ id: "more", title: "עוד", topics: leftover.map((t) => t.id) });
+    chs.forEach((ch, idx) => {
+      const items = (ch.topics || []).map((id) => byId[id]).filter(Boolean);
+      if (!items.length) return;
+      items.forEach((it) => used.add(it.id));
+      const open = isChapterOpen(track, ch.id, idx === 0);
+      blocks.push(`<section class="chapter${open ? " open" : ""}" data-chapter="${escapeHtml(ch.id)}">
+        <button type="button" class="chapter-toggle" aria-expanded="${open ? "true" : "false"}">
+          <span class="chapter-title">${escapeHtml(ch.title)}</span>
+          <span class="chapter-count">${items.length === 1 ? "נושא אחד" : items.length + " נושאים"}</span>
+          <span class="chapter-chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="chapter-body">${items.map((t) => topicNodeHtml(track, mode, t)).join("")}</div>
+      </section>`);
+    });
+    return blocks.join("");
+  }
+
+  function bindTopicNodes(track, mode, root) {
+    (root || $app).querySelectorAll(".level-node").forEach((btn) => {
       btn.onclick = () => {
         if (mode === "learn") location.hash = `#learn/${track}/${btn.dataset.id}`;
         else startLevel(track, btn.dataset.id);
@@ -475,12 +605,146 @@
     });
   }
 
+  function bindChapters(track) {
+    $app.querySelectorAll(".chapter").forEach((sec) => {
+      const tog = sec.querySelector(".chapter-toggle");
+      if (!tog) return;
+      tog.onclick = () => {
+        const open = !sec.classList.contains("open");
+        sec.classList.toggle("open", open);
+        tog.setAttribute("aria-expanded", open ? "true" : "false");
+        saveChapterOpen(track, sec.dataset.chapter, open);
+      };
+    });
+  }
+
+  function renderSearchResults(track, q) {
+    const box = document.getElementById("learn-search-results");
+    const listEl = document.getElementById("topic-map");
+    const intro = document.querySelector(".map-intro");
+    if (!box) return;
+    const query = String(q || "").trim();
+    if (!query) {
+      box.hidden = true;
+      box.innerHTML = "";
+      if (listEl) listEl.hidden = false;
+      if (intro) intro.hidden = false;
+      return;
+    }
+    const grouped = searchLearn(track, query);
+    if (listEl) listEl.hidden = true;
+    if (intro) intro.hidden = true;
+    box.hidden = false;
+    if (!grouped.length) {
+      box.innerHTML = `<p class="search-empty">אין תוצאות עבור «${escapeHtml(query)}»</p>`;
+      return;
+    }
+    box.innerHTML = grouped.map((g) => {
+      const hits = g.hits.map((h) => {
+        const snip = snippetAround(h.row.snippet || h.row.hay, query);
+        const label = h.row.kind === "topic" ? h.topic.title : (h.topic.title + " · " + h.row.title);
+        return `<button type="button" class="search-hit" data-id="${h.topic.id}" data-idx="${h.row.idx}">
+          <b>${escapeHtml(label)}</b>
+          ${snip ? `<small>${escapeHtml(snip)}</small>` : ""}
+        </button>`;
+      }).join("");
+      return `<section class="search-group"><h4>${escapeHtml(g.chapter.title)}</h4>${hits}</section>`;
+    }).join("");
+    box.querySelectorAll(".search-hit").forEach((btn) => {
+      btn.onclick = () => {
+        pendingLearnJump = { track, topicId: btn.dataset.id, query, idx: Number(btn.dataset.idx) };
+        location.hash = `#learn/${track}/${btn.dataset.id}`;
+      };
+    });
+  }
+
+  function bindLearnSearch(track) {
+    const input = document.getElementById("learn-search");
+    if (!input) return;
+    const run = () => {
+      learnSearchQuery[track] = input.value;
+      renderSearchResults(track, input.value);
+    };
+    input.addEventListener("input", run);
+    if (input.value) renderSearchResults(track, input.value);
+  }
+
+  function applyLessonHighlight(track, topicId, lesson) {
+    if (!pendingLearnJump || pendingLearnJump.track !== track || pendingLearnJump.topicId !== topicId) return;
+    const q = String(pendingLearnJump.query || "").trim().toLowerCase();
+    const jumpIdx = pendingLearnJump.idx;
+    pendingLearnJump = null;
+    if (!q) return;
+    const hero = document.querySelector(".lesson-hero");
+    const items = [...document.querySelectorAll(".lesson-item")];
+    let first = null;
+    const topicHay = searchHay([
+      (findTopic(track, topicId) || {}).title,
+      (findTopic(track, topicId) || {}).short,
+      (findTopic(track, topicId) || {}).intro,
+      lesson.intro,
+    ]);
+    if (topicHay.includes(q) && hero) {
+      hero.classList.add("search-hit");
+      first = hero;
+    }
+    (lesson.items || []).forEach((it, idx) => {
+      const hay = searchHay([it.term, it.title, it.text, it.code, it.sample]);
+      if (!hay.includes(q) && idx !== jumpIdx) return;
+      if (hay.includes(q) || idx === jumpIdx) {
+        const el = items[idx];
+        if (el) {
+          el.classList.add("search-hit");
+          if (!first || idx === jumpIdx) first = el;
+        }
+      }
+    });
+    if (first) {
+      requestAnimationFrame(() => {
+        first.scrollIntoView({ block: "center", behavior: "smooth" });
+      });
+    }
+  }
+
+  function renderMap(track, mode) {
+    hideToast();
+    mode = mode === "practice" ? "practice" : "learn";
+    const pyish = usesPython(track);
+    const prog = trackProgress(track);
+    const intro = mode === "learn"
+      ? "בחרו נושא ללמידה. כל פריט מוסבר עם דוגמה. הלמידה לא פותחת תרגול אוטומטית."
+      : `בחרו נושא לתרגול. בכל סבב מופיעות עד ${SESSION_SIZE} שאלות אקראיות מתוך מאגר הנושא. ${prog.done} מתוך ${prog.total} נושאים כבר תורגלו · ${prog.stars} כוכבים.`;
+    const title = (mode === "learn" ? "למידת " : "תרגול ") + trackLabel(track);
+    const searchVal = escapeHtml(learnSearchQuery[track] || "");
+    const searchBar = mode === "learn" ? `
+        <div class="learn-search">
+          <label class="sr-only" for="learn-search">חיפוש בחומר הלמידה</label>
+          <input id="learn-search" type="search" dir="rtl" placeholder="חיפוש בנושאים, הסברים ודוגמאות…" value="${searchVal}" autocomplete="off" />
+        </div>
+        <div id="learn-search-results" class="search-results" hidden></div>` : "";
+    $app.innerHTML = `
+      ${topbar({ title, back: true })}
+      <div class="screen">
+        ${modeTabs(track, mode)}
+        ${searchBar}
+        <p class="map-intro">${intro}</p>
+        <div id="topic-map" class="level-list colorful ${pyish ? "py" : ""}">
+          ${chaptersHtml(track, mode)}
+        </div>
+      </div>`;
+    bindChrome("#home");
+    bindModeTabs(track);
+    bindTopicNodes(track, mode);
+    bindChapters(track);
+    if (mode === "learn") bindLearnSearch(track);
+  }
+
   function renderLesson(track, topicId) {
     hideToast();
     const topic = findTopic(track, topicId);
     if (!topic) return (location.hash = "#" + track + "/learn");
     const lesson = lessonsFor(track)[topicId] || { intro: topic.intro || "", items: [] };
-    const isPy = track === "python";
+    const pyish = usesPython(track);
     $app.innerHTML = `
       ${topbar({ title: topic.short || topic.title, back: true })}
       <div class="screen lesson-screen">
@@ -503,14 +767,15 @@
           </article>
         `).join("")}
         <div class="lesson-footer">
-          <button class="primary-btn ${isPy ? "py" : ""}" id="go-practice-topic">לתרגול הנושא</button>
+          <button class="primary-btn ${pyish ? "py" : ""}" id="go-practice-topic">לתרגול הנושא</button>
           <button class="ghost-btn" id="back-learn-map">חזרה לנושאים</button>
         </div>
       </div>`;
     bindChrome("#" + track + "/learn");
     document.getElementById("go-practice-topic").onclick = () => startLevel(track, topicId);
     document.getElementById("back-learn-map").onclick = () => (location.hash = "#" + track + "/learn");
-    if (!isPy) hydrateLessonExamples(lesson.items || []);
+    if (isSql(track)) hydrateLessonExamples(lesson.items || []);
+    applyLessonHighlight(track, topicId, lesson);
   }
 
   async function hydrateLessonExamples(items) {
@@ -569,7 +834,7 @@
     hideToast();
     if (!session) return renderHome();
     const { topic, q, total } = currentQ();
-    const isPy = session.track === "python";
+    const isPy = usesPython(session.track);
     const i = session.index;
     const done = session.answered[q.id];
     $app.innerHTML = `
@@ -604,7 +869,7 @@
     const body = document.getElementById("q-body");
     const actions = document.getElementById("q-actions");
     const extra = document.getElementById("q-extra");
-    const isPy = session.track === "python";
+    const isPy = usesPython(session.track);
 
     if (q.type === "mcq" || q.type === "predict") {
       body.innerHTML = `<div class="choices"></div>`;
@@ -789,7 +1054,7 @@
         const code = document.getElementById("code-area").value;
         result.code = code;
         document.getElementById("code-area").disabled = true;
-        if (session.track === "sql") {
+        if (isSql(session.track)) {
           const engine = await ensureSql();
           const grade = window.SQLEngine.gradeSql(engine, window.SQL_SCHEMA.SCHEMA_SQL, q, code);
           result.ok = !!grade.ok;
@@ -823,7 +1088,7 @@
     const actions = document.getElementById("q-actions");
     actions.innerHTML = "";
     showFeedback(q, result);
-    addNext(actions, session.track === "python");
+    addNext(actions, usesPython(session.track));
   }
 
   function showFeedback(q, result) {
@@ -839,14 +1104,14 @@
     }
     if (result.detail) {
       const d = result.detail;
-      if (d.error && !d.studentResult && session.track === "sql") {
+      if (d.error && !d.studentResult && isSql(session.track)) {
         html += `<p>שגיאה: <span class="mono">${escapeHtml(d.error)}</span></p>`;
       }
       if (d.studentResult || d.expectedResult) {
         html += `<p><b>התוצאה שלכם</b></p>${renderTable(d.studentResult || { columns: [], values: [] })}`;
         if (!ok) html += `<p><b>התוצאה הצפויה</b></p>${renderTable(d.expectedResult || { columns: [], values: [] })}`;
       }
-      if (session.track === "python" && q.type === "write") {
+      if (usesPython(session.track) && q.type === "write") {
         if (d.error) html += `<pre class="code">${escapeHtml(shortErr(d.error))}</pre>`;
         if (d.expectedStdout != null) {
           html += `<p><b>הפלט שלכם</b></p><pre class="code">${escapeHtml(d.stdout || "—")}</pre>`;
@@ -917,9 +1182,9 @@
           <p>בפעם הראשונה עניתם נכון על ${firstOk} מתוך ${total} (${Math.round(ratio * 100)}%).</p>
           <p>נשמרו ${bestStars} כוכבים לנושא הזה.</p>
           <div class="btn-row">
-            <button class="primary-btn ${track === "python" ? "py" : ""}" id="back-map">חזרה לתרגול</button>
+            <button class="primary-btn ${usesPython(track) ? "py" : ""}" id="back-map">חזרה לתרגול</button>
             <button class="ghost-btn" id="retry">סבב חדש</button>
-            <button class="ghost-btn" id="to-lesson">לשיעור</button>
+            <button class="ghost-btn" id="to-lesson">ללמידה</button>
           </div>
         </div>
       </div>`;
@@ -950,13 +1215,15 @@
     if (h === "sql/practice") return renderMap("sql", "practice");
     if (h === "python" || h === "python/learn") return renderMap("python", "learn");
     if (h === "python/practice") return renderMap("python", "practice");
-    if (parts[0] === "sheet") return renderMap(parts[1] === "python" ? "python" : "sql", "learn");
+    if (h === "data" || h === "data/learn") return renderMap("data", "learn");
+    if (h === "data/practice") return renderMap("data", "practice");
+    if (parts[0] === "sheet") return renderMap(parseTrack(parts[1]), "learn");
     if (parts[0] === "learn" && parts[1] && parts[2]) {
-      const track = parts[1] === "python" ? "python" : "sql";
+      const track = parseTrack(parts[1]);
       return renderLesson(track, parts[2]);
     }
     if (parts[0] === "play" && parts[1] && parts[2]) {
-      const track = parts[1] === "python" ? "python" : "sql";
+      const track = parseTrack(parts[1]);
       if (!session || session.track !== track || session.topicId !== parts[2]) {
         return startLevel(track, parts[2]);
       }

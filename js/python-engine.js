@@ -63,9 +63,33 @@
     return String(a) === String(b);
   }
 
+  const loadedPkgs = new Set();
+
+  function neededPackages(question, code) {
+    const listed = (question && question.packages) || [];
+    const blob = [code || "", (question && question.solution) || "", (question && question.starter) || ""].join("\n");
+    const need = new Set(listed);
+    if (/\bnumpy\b|\bnp\./.test(blob) || /import\s+numpy/.test(blob)) need.add("numpy");
+    if (/\bpandas\b|\bpd\./.test(blob) || /import\s+pandas/.test(blob)) {
+      need.add("numpy");
+      need.add("pandas");
+    }
+    return Array.from(need);
+  }
+
+  async function ensurePackages(engine, pkgs, onStatus) {
+    const missing = pkgs.filter((p) => !loadedPkgs.has(p));
+    if (!missing.length) return;
+    if (onStatus) onStatus("loading");
+    await engine.loadPackage(missing);
+    missing.forEach((p) => loadedPkgs.add(p));
+    if (onStatus) onStatus("ready");
+  }
+
   async function gradePython(question, studentCode, onStatus) {
     const engine = await loadPyodideEngine(onStatus);
     const code = String(studentCode || "");
+    await ensurePackages(engine, neededPackages(question, code), onStatus);
     if (!code.trim()) {
       return { ok: false, error: "empty", stdout: "", expectedStdout: "", tests: [] };
     }
@@ -94,9 +118,28 @@ try:
             _payload["results"].append({"ok": True, "value": None, "error": None})
             continue
         _val = eval(_e, _ns)
+        def _jsonable(v):
+            try:
+                import numpy as _np
+                if isinstance(v, _np.ndarray):
+                    v = v.tolist()
+                elif isinstance(v, _np.generic):
+                    v = v.item()
+            except Exception:
+                pass
+            try:
+                import pandas as _pd
+                if isinstance(v, _pd.Series):
+                    v = [None if _pd.isna(x) else x for x in v.tolist()]
+            except Exception:
+                pass
+            try:
+                return json.loads(json.dumps(v))
+            except TypeError:
+                return str(v)
         try:
-            _json = json.loads(json.dumps(_val))
-        except TypeError:
+            _json = _jsonable(_val)
+        except Exception:
             _json = str(_val)
         _payload["results"].append({"ok": True, "value": _json, "error": None})
     _payload["ok"] = True
@@ -158,6 +201,8 @@ json.dumps(_payload)
     gradePython,
     normalizeStdout,
     valuesEqual,
+    neededPackages,
+    ensurePackages,
   };
   root.PythonEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);

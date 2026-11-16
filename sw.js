@@ -1,5 +1,5 @@
 /* Cache local assets for offline-ish play. Python write-code (Pyodide CDN) is cached opportunistically after first load. */
-const CACHE = "printer-v5";
+const CACHE = "printer-v6";
 const LOCAL = [
   "./",
   "./index.html",
@@ -14,6 +14,8 @@ const LOCAL = [
   "./js/questions-python-writes-v4.js",
   "./js/lessons-sql.js",
   "./js/lessons-python.js",
+  "./js/lessons-data.js",
+  "./js/questions-data.js",
   "./js/topics-meta.js",
   "./js/brand.js",
   "./js/quiz.js",

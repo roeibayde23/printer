@@ -38,12 +38,52 @@
     mixed:        { accent: "#c8962e", soft: "#f4e6c4" }
   };
 
+  const DATA_META = {
+    datascience:     { accent: "#1A2340", soft: "#e6e8ee" },
+    libraries:       { accent: "#1A2340", soft: "#e6e8ee" },
+    jupyter:         { accent: "#1A2340", soft: "#e6e8ee" },
+    "numpy-intro":   { accent: "#1A2340", soft: "#e6e8ee" },
+    "numpy-random":  { accent: "#1A2340", soft: "#e6e8ee" },
+    "numpy-index":   { accent: "#1A2340", soft: "#e6e8ee" },
+    "numpy-ops":     { accent: "#1A2340", soft: "#e6e8ee" },
+    "pandas-series": { accent: "#1A2340", soft: "#e6e8ee" }
+  };
+
+  const TRACK_CHAPTERS = {
+    sql: [
+      { id: "basics", title: "יסודות", topics: ["crud"] },
+      { id: "filter", title: "סינון ותנאים", topics: ["conditions", "like", "wildcards", "inbetween", "nulls"] },
+      { id: "sort", title: "מיון והגבלה", topics: ["orderby", "ascdesc", "limit", "offset", "top"] },
+      { id: "calc", title: "פונקציות וחישובים", topics: ["math", "alias", "distinct"] },
+      { id: "types", title: "סוגי נתונים", topics: ["types-numeric", "types-string"] },
+      { id: "group", title: "קיבוץ וחיבור טבלאות", topics: ["groupby", "join"] },
+      { id: "mixed", title: "תרגול משולב", topics: ["mixed"] }
+    ],
+    python: [
+      { id: "basics", title: "יסודות", topics: ["printvar", "types", "strings", "operators"] },
+      { id: "flow", title: "תנאים ולולאות", topics: ["conditionals", "loops"] },
+      { id: "struct", title: "מבני נתונים", topics: ["lists", "tuples", "dicts", "sets"] },
+      { id: "funcs", title: "פונקציות", topics: ["functions", "builtins"] },
+      { id: "mixed", title: "תרגול משולב", topics: ["mixed"] }
+    ],
+    data: [
+      { id: "basics", title: "יסודות", topics: ["datascience"] },
+      { id: "env", title: "סביבת עבודה", topics: ["libraries", "jupyter"] },
+      { id: "numpy", title: "NumPy", topics: ["numpy-intro", "numpy-random", "numpy-index", "numpy-ops"] },
+      { id: "pandas", title: "Pandas", topics: ["pandas-series"] }
+    ]
+  };
+
   function topicMeta(track, id) {
-    const table = track === "python" ? PYTHON_META : SQL_META;
-    return table[id] || { accent: "#2c5c50", soft: "#d7e6df" };
+    const table = track === "python" ? PYTHON_META : track === "data" ? DATA_META : SQL_META;
+    return table[id] || { accent: "#1A2340", soft: "#e6e8ee" };
   }
 
-  root.TOPIC_META = { SQL_META, PYTHON_META, topicMeta };
+  function chaptersFor(track) {
+    return TRACK_CHAPTERS[track] || [];
+  }
+
+  root.TOPIC_META = { SQL_META, PYTHON_META, DATA_META, TRACK_CHAPTERS, topicMeta, chaptersFor };
   if (typeof module !== "undefined" && module.exports) {
     module.exports = root.TOPIC_META;
   }
