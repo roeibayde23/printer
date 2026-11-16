@@ -89,31 +89,44 @@ function cacheFirst(req) {
   });
 }
 
+function reloadUrlFor(client) {
+  // Same-URL navigate is a no-op in some browsers, leaving the old JS running.
+  try {
+    const u = new URL(client.url, self.location.origin);
+    u.searchParams.set("sw", APP_VERSION);
+    return u.href;
+  } catch (_) {
+    return self.registration.scope;
+  }
+}
+
 function notifyClientsToReload() {
   return self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-    return Promise.all(clients.map((client) => {
+    clients.forEach((client) => {
       try { client.postMessage({ type: "SW_UPDATED", version: APP_VERSION }); } catch (_) {}
       if (typeof client.navigate === "function") {
-        try { return client.navigate(client.url); } catch (_) {}
+        try { client.navigate(reloadUrlFor(client)); } catch (_) {}
       }
-      return undefined;
-    }));
+    });
   });
 }
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(LOCAL)).then(() => self.skipWaiting())
-  );
+  // Do not block install on precache. An older cache-first worker can stall
+  // cache.addAll, which would leave this worker installing forever and never
+  // skipWaiting / take over a stuck PWA.
+  event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
-      .then(() => self.clients.claim())
-      .then(() => notifyClientsToReload())
-  );
+  // Claim and tell pages to reload first. Do not block activation on cache
+  // surgery or precache — deleting a cache the old worker still uses can stall
+  // activate, and a stuck "activating" worker never takes over.
+  event.waitUntil(self.clients.claim().then(() => { notifyClientsToReload(); }));
+  caches.keys()
+    .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+    .then(() => caches.open(CACHE).then((c) => c.addAll(LOCAL)))
+    .catch(() => {});
 });
 
 self.addEventListener("fetch", (event) => {
