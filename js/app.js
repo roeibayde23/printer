@@ -1,6 +1,7 @@
 /* printer — Hebrew SQL & Python practice game (v2: learn + practice) */
 (function () {
   const STORAGE_KEY = "printer-v2";
+  const APP_VERSION = window.APP_VERSION || "8";
   const SESSION_SIZE = (window.Quiz && window.Quiz.SESSION_SIZE) || 6;
   const $app = document.getElementById("app");
   const TYPE_LABELS = {
@@ -481,6 +482,7 @@
             <button class="srow-btn danger" id="btn-reset" type="button">איפוס</button>
           </div>
         </section>
+        <p class="app-version">v${escapeHtml(APP_VERSION)}</p>
       </div>`;
     bindChrome("#home");
     document.getElementById("btn-reset").onclick = resetProgress;
@@ -1011,18 +1013,11 @@
     }
   }
 
-  function normalizeFill(s) {
-    return String(s || "").trim().replace(/\s+/g, " ").replace(/;$/, "");
-  }
-
   function fillsOk(q, values) {
-    if (q.acceptAnyName) {
-      return values.length && values.every((v) => /^[A-Za-z_][A-Za-z0-9_]*$/.test(String(v).trim()));
+    if (window.Quiz && typeof window.Quiz.fillsOk === "function") {
+      return window.Quiz.fillsOk(q, values);
     }
-    return q.blanks.every((accepted, i) => {
-      const got = normalizeFill(values[i]).toLowerCase();
-      return accepted.some((a) => normalizeFill(a).toLowerCase() === got);
-    });
+    return false;
   }
 
   async function submitQuestion(q) {

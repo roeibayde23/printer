@@ -1022,3 +1022,12 @@ textarea.code:focus, .fill-row input:focus, .choice:focus-visible, button:focus-
 #learn-search-results[hidden] {
   display: none !important;
 }
+
+.app-version {
+  margin: 20px 0 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}

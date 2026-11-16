@@ -108,6 +108,11 @@
     };
   }
 
+  function isEngineFailure(err) {
+    const s = String((err && err.message) || err || "");
+    return /Program terminated with exit\(\d+\)|init_fs_encoding|Failed to fetch|Load failed|NetworkError|WebAssembly|RuntimeError|Aborted|Fatal Python error|pyodide\.asm/i.test(s);
+  }
+
   async function gradePython(question, studentCode, onStatus) {
     let engine;
     try {
@@ -130,7 +135,10 @@
     const tests = question.tests || [];
     engine.globals.set("_test_exprs", tests.map((t) => t.expr || t.call || ""));
 
-    const raw = await engine.runPythonAsync(`
+    let raw;
+    let payload;
+    try {
+      raw = await engine.runPythonAsync(`
 import sys, io, json, traceback
 
 _out = io.StringIO()
@@ -182,7 +190,13 @@ finally:
     sys.stdin, sys.stdout, sys.stderr = _old_in, _old_out, _old_err
 json.dumps(_payload)
 `);
-    const payload = JSON.parse(raw);
+      payload = JSON.parse(raw);
+    } catch (err) {
+      return engineErrorResult(err);
+    }
+    if (isEngineFailure((payload && payload.error) || raw)) {
+      return engineErrorResult((payload && payload.error) || raw);
+    }
     if (!payload.ok) {
       return {
         ok: false,
