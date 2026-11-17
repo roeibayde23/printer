@@ -49,7 +49,7 @@
 
   const Brand = {
     name: "printer",
-    tagline: "תרגול SQL, פייתון ומדעי הנתונים",
+    tagline: "תרגול SQL, פייתון, מדעי הנתונים ואוצר מילים",
     navy: NAVY,
     gold: GOLD,
     svg: markSvg,

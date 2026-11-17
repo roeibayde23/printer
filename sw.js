@@ -2,7 +2,7 @@
    HTML and sw.js are network-first so updates reach installed PWAs.
    Versioned JS/CSS (?v=) are cache-first. Old caches are dropped on activate,
    and open pages are asked to reload once. */
-const APP_VERSION = "8";
+const APP_VERSION = "9";
 const CACHE = "printer-v" + APP_VERSION;
 const V = "?v=" + APP_VERSION;
 
@@ -22,6 +22,7 @@ const LOCAL = [
   "./js/lessons-python.js" + V,
   "./js/lessons-data.js" + V,
   "./js/questions-data.js" + V,
+  "./js/vocab-data.js" + V,
   "./js/topics-meta.js" + V,
   "./js/brand.js" + V,
   "./js/quiz.js" + V,

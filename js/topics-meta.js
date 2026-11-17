@@ -49,6 +49,17 @@
     "pandas-series": { accent: "#1A2340", soft: "#e6e8ee" }
   };
 
+  const VOCAB_META = {
+    "sql-keywords":    { accent: "#1A2340", soft: "#e6e8ee" },
+    "sql-concepts":    { accent: "#1A2340", soft: "#e6e8ee" },
+    "python-basics":   { accent: "#1A2340", soft: "#e6e8ee" },
+    "python-methods":  { accent: "#1A2340", soft: "#e6e8ee" },
+    env:               { accent: "#1A2340", soft: "#e6e8ee" },
+    numpy:             { accent: "#1A2340", soft: "#e6e8ee" },
+    pandas:            { accent: "#1A2340", soft: "#e6e8ee" },
+    general:           { accent: "#1A2340", soft: "#e6e8ee" }
+  };
+
   const TRACK_CHAPTERS = {
     sql: [
       { id: "basics", title: "יסודות", topics: ["crud"] },
@@ -71,11 +82,21 @@
       { id: "env", title: "סביבת עבודה", topics: ["libraries", "jupyter"] },
       { id: "numpy", title: "NumPy", topics: ["numpy-intro", "numpy-random", "numpy-index", "numpy-ops"] },
       { id: "pandas", title: "Pandas", topics: ["pandas-series"] }
+    ],
+    vocab: [
+      { id: "sql-keywords", title: "מילות מפתח וסעיפים ב-SQL", topics: ["sql-keywords"] },
+      { id: "sql-concepts", title: "מושגי SQL", topics: ["sql-concepts"] },
+      { id: "python-basics", title: "יסודות פייתון", topics: ["python-basics"] },
+      { id: "python-methods", title: "שיטות ופונקציות בפייתון", topics: ["python-methods"] },
+      { id: "env", title: "סביבת עבודה", topics: ["env"] },
+      { id: "numpy", title: "NumPy", topics: ["numpy"] },
+      { id: "pandas", title: "Pandas", topics: ["pandas"] },
+      { id: "general", title: "מושגים כלליים", topics: ["general"] }
     ]
   };
 
   function topicMeta(track, id) {
-    const table = track === "python" ? PYTHON_META : track === "data" ? DATA_META : SQL_META;
+    const table = track === "python" ? PYTHON_META : track === "data" ? DATA_META : track === "vocab" ? VOCAB_META : SQL_META;
     return table[id] || { accent: "#1A2340", soft: "#e6e8ee" };
   }
 
@@ -83,7 +104,7 @@
     return TRACK_CHAPTERS[track] || [];
   }
 
-  root.TOPIC_META = { SQL_META, PYTHON_META, DATA_META, TRACK_CHAPTERS, topicMeta, chaptersFor };
+  root.TOPIC_META = { SQL_META, PYTHON_META, DATA_META, VOCAB_META, TRACK_CHAPTERS, topicMeta, chaptersFor };
   if (typeof module !== "undefined" && module.exports) {
     module.exports = root.TOPIC_META;
   }

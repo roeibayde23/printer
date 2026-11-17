@@ -1,7 +1,7 @@
 /* printer — Hebrew SQL & Python practice game (v2: learn + practice) */
 (function () {
   const STORAGE_KEY = "printer-v2";
-  const APP_VERSION = window.APP_VERSION || "8";
+  const APP_VERSION = window.APP_VERSION || "9";
   const SESSION_SIZE = (window.Quiz && window.Quiz.SESSION_SIZE) || 6;
   const $app = document.getElementById("app");
   const TYPE_LABELS = {
@@ -9,6 +9,7 @@
     predict: "נחשו את התוצאה",
     fill: "השלימו את הקוד",
     write: "כתבו קוד",
+    match: "התאמה",
   };
 
   let SQL = null;
@@ -69,7 +70,7 @@
   }
 
   function parseTrack(name) {
-    if (name === "python" || name === "data") return name;
+    if (name === "python" || name === "data" || name === "vocab") return name;
     return "sql";
   }
 
@@ -81,15 +82,21 @@
     return track === "sql";
   }
 
+  function isVocab(track) {
+    return track === "vocab";
+  }
+
   function trackLabel(track) {
     if (track === "python") return "פייתון";
     if (track === "data") return "מדעי הנתונים";
+    if (track === "vocab") return "אוצר מילים";
     return "SQL";
   }
 
   function topics(track) {
     if (track === "python") return window.PYTHON_TOPICS || [];
     if (track === "data") return window.DATA_TOPICS || [];
+    if (track === "vocab") return window.VOCAB_TOPICS || [];
     return window.SQL_TOPICS || [];
   }
 
@@ -100,6 +107,7 @@
   function lessonsFor(track) {
     if (track === "python") return window.PYTHON_LESSONS || {};
     if (track === "data") return window.DATA_LESSONS || {};
+    if (track === "vocab") return window.VOCAB_LESSONS || {};
     return window.SQL_LESSONS || {};
   }
 
@@ -111,7 +119,7 @@
   }
 
   const CHAPTER_STATE_KEY = "printer-chapters-v1";
-  const learnSearchQuery = { sql: "", python: "", data: "" };
+  const learnSearchQuery = { sql: "", python: "", data: "", vocab: "" };
   let pendingLearnJump = null;
 
   function loadChapterState() {
@@ -142,13 +150,16 @@
     const topicHay = searchHay([topic.title, topic.short, topic.intro, lesson.intro]);
     rows.push({ kind: "topic", idx: -1, title: topic.title, hay: topicHay, snippet: topic.intro || lesson.intro || "" });
     (lesson.items || []).forEach((it, idx) => {
-      const hay = searchHay([it.term, it.title, it.text, it.code, it.sample]);
+      const hay = searchHay([it.term, it.title, it.text, it.code, it.sample, it.he]);
       rows.push({
         kind: "item",
         idx,
         title: ((it.term || "") + " " + (it.title || "")).trim(),
+        term: it.term || "",
+        he: it.title || "",
         hay,
         snippet: it.text || it.code || "",
+        entryId: it.entryId || "",
       });
     });
     return rows;
@@ -230,14 +241,17 @@
   function hebText(s) {
     const esc = escapeHtml(s);
     const wrapped = esc.replace(
-      /(?:`([^`]+)`)|((?:[A-Za-z_][A-Za-z0-9_]*|\d+(?:\.\d+)?|[*=<>!%()[\]'/,.@:+\-]+)(?:\s+(?:[A-Za-z_][A-Za-z0-9_]*|\d+(?:\.\d+)?|[*=<>!%()[\]'/,.@:+\-]+))*(?:; )?)([?!]+)?/g,
+      /(?:`([^`]+)`)|((?:[A-Za-z_][A-Za-z0-9_.]*|\d+(?:\.\d+)?|[*=<>!%()[\]'/,.@:+\-]+)(?:\s+(?:[A-Za-z_][A-Za-z0-9_.]*|\d+(?:\.\d+)?|[*=<>!%()[\]'/,.@:+\-]+))*(?:; )?)([?!]+)?/g,
       (full, tick, run, punct) => {
         const text = (tick || run) + (punct || "");
         if (!/[A-Za-z]/.test(text)) return full;
         return `<span class="ltr" dir="ltr">${text}</span>`;
       }
     );
-    return wrapped.replace(/(\[[0-9,.\s]+\])/g, '<span class="ltr" dir="ltr">$1</span>');
+    return wrapped
+      .replace(/(\[[0-9,.\s]+\])/g, '<span class="ltr" dir="ltr">$1</span>')
+      .replace(/(\(\d+(?:\s*,\s*\d+)+\))/g, '<span class="ltr" dir="ltr">$1</span>')
+      .replace(/(\d+\s*[×x]\s*\d+)/g, '<span class="ltr" dir="ltr">$1</span>');
   }
 
   function hideToast() {
@@ -509,6 +523,7 @@
     const sql = trackProgress("sql");
     const py = trackProgress("python");
     const data = trackProgress("data");
+    const vocabProg = trackProgress("vocab");
     $app.innerHTML = `
       ${topbar({ title: brand().name, back: false, lockup: true })}
       <div class="screen">
@@ -519,7 +534,7 @@
         <div class="stats-row">
           <div class="stat"><div class="k">נקודות</div><div class="v">${state.xp || 0} XP</div></div>
           <div class="stat"><div class="k">רצף ימים</div><div class="v">${state.streak || 0} 🔥</div></div>
-          <div class="stat"><div class="k">כוכבים</div><div class="v">${sql.stars + py.stars + data.stars}</div></div>
+          <div class="stat"><div class="k">כוכבים</div><div class="v">${sql.stars + py.stars + data.stars + vocabProg.stars}</div></div>
         </div>
         <div class="section-label">בחרו תחום</div>
         <div class="track-grid">
@@ -547,6 +562,14 @@
               <div class="progress-mini"><span style="width:${data.maxStars ? (data.stars / data.maxStars) * 100 : 0}%"></span></div>
             </div>
           </button>
+          <button class="track-card vocab" id="go-vocab">
+            <div class="track-icon">Aa</div>
+            <div style="flex:1">
+              <h3>אוצר מילים</h3>
+              <p>${vocabProg.done}/${vocabProg.total} נושאים בתרגול · ${vocabProg.stars} כוכבים</p>
+              <div class="progress-mini"><span style="width:${vocabProg.maxStars ? (vocabProg.stars / vocabProg.maxStars) * 100 : 0}%"></span></div>
+            </div>
+          </button>
         </div>
       </div>`;
     bindChrome();
@@ -554,6 +577,8 @@
     document.getElementById("go-py").onclick = () => (location.hash = "#python/learn");
     const goData = document.getElementById("go-data");
     if (goData) goData.onclick = () => (location.hash = "#data/learn");
+    const goVocab = document.getElementById("go-vocab");
+    if (goVocab) goVocab.onclick = () => (location.hash = "#vocab/learn");
   }
 
   function topicNodeHtml(track, mode, t) {
@@ -572,8 +597,26 @@
     </button>`;
   }
 
+  function chapterCountLabel(track, mode, n) {
+    if (isVocab(track) && mode === "learn") {
+      return n === 1 ? "מונח אחד" : n + " מונחים";
+    }
+    return n === 1 ? "נושא אחד" : n + " נושאים";
+  }
+
+  function vocabEntryHtml(e) {
+    return `<article class="vocab-entry" id="vocab-${escapeHtml(e.id)}" data-id="${escapeHtml(e.id)}">
+      <h3><span class="term mono" dir="ltr">${escapeHtml(e.term)}</span><span class="vocab-he">${escapeHtml(e.he)}</span></h3>
+      <p>${hebText(e.explanation || "")}</p>
+      ${e.example ? `<pre class="code" dir="ltr">${escapeHtml(e.example)}</pre>` : ""}
+    </article>`;
+  }
+
   function chaptersHtml(track, mode) {
     const list = topics(track);
+    if (isVocab(track) && mode === "practice") {
+      return list.map((t) => topicNodeHtml(track, mode, t)).join("");
+    }
     const byId = Object.fromEntries(list.map((t) => [t.id, t]));
     const chapters = chaptersFor(track);
     const used = new Set();
@@ -589,10 +632,12 @@
       blocks.push(`<section class="chapter${open ? " open" : ""}" data-chapter="${escapeHtml(ch.id)}">
         <button type="button" class="chapter-toggle" aria-expanded="${open ? "true" : "false"}">
           <span class="chapter-title">${escapeHtml(ch.title)}</span>
-          <span class="chapter-count">${items.length === 1 ? "נושא אחד" : items.length + " נושאים"}</span>
+          <span class="chapter-count">${chapterCountLabel(track, mode, isVocab(track) && mode === "learn" ? (items[0] && items[0].entries ? items[0].entries.length : 0) : items.length)}</span>
           <span class="chapter-chevron" aria-hidden="true">▾</span>
         </button>
-        <div class="chapter-body">${items.map((t) => topicNodeHtml(track, mode, t)).join("")}</div>
+        <div class="chapter-body">${isVocab(track) && mode === "learn"
+          ? (items[0] && items[0].entries ? items[0].entries.map(vocabEntryHtml).join("") : "")
+          : items.map((t) => topicNodeHtml(track, mode, t)).join("")}</div>
       </section>`);
     });
     return blocks.join("");
@@ -645,15 +690,33 @@
       const hits = g.hits.map((h) => {
         const snip = snippetAround(h.row.snippet || h.row.hay, query);
         const label = h.row.kind === "topic" ? h.topic.title : (h.topic.title + " · " + h.row.title);
-        return `<button type="button" class="search-hit" data-id="${h.topic.id}" data-idx="${h.row.idx}">
-          <b>${escapeHtml(label)}</b>
-          ${snip ? `<small>${escapeHtml(snip)}</small>` : ""}
+        const entryAttr = h.row.entryId ? ` data-entry="${escapeHtml(h.row.entryId)}"` : "";
+        const titleHtml = h.row.term
+          ? `<span class="mono ltr" dir="ltr">${escapeHtml(h.row.term)}</span> ${escapeHtml(h.row.he || "")}`
+          : escapeHtml(label);
+        return `<button type="button" class="search-hit" data-id="${h.topic.id}" data-idx="${h.row.idx}"${entryAttr}>
+          <b>${titleHtml}</b>
+          ${snip ? `<small>${hebText(snip)}</small>` : ""}
         </button>`;
       }).join("");
       return `<section class="search-group"><h4>${escapeHtml(g.chapter.title)}</h4>${hits}</section>`;
     }).join("");
     box.querySelectorAll(".search-hit").forEach((btn) => {
       btn.onclick = () => {
+        if (isVocab(track)) {
+          const entryId = btn.dataset.entry;
+          learnSearchQuery[track] = "";
+          const input = document.getElementById("learn-search");
+          if (input) input.value = "";
+          pendingLearnJump = { track, topicId: btn.dataset.id, entryId, query };
+          if ((location.hash || "").replace(/^#/, "") === track + "/learn") {
+            renderMap(track, "learn");
+            jumpToVocabEntry(track, btn.dataset.id, entryId);
+          } else {
+            location.hash = "#" + track + "/learn";
+          }
+          return;
+        }
         pendingLearnJump = { track, topicId: btn.dataset.id, query, idx: Number(btn.dataset.idx) };
         location.hash = `#learn/${track}/${btn.dataset.id}`;
       };
@@ -708,20 +771,40 @@
     }
   }
 
+  function jumpToVocabEntry(track, chapterId, entryId) {
+    if (!isVocab(track)) return;
+    if (chapterId) {
+      const sec = $app.querySelector('.chapter[data-chapter="' + CSS.escape(chapterId) + '"]');
+      if (sec) {
+        sec.classList.add("open");
+        const tog = sec.querySelector(".chapter-toggle");
+        if (tog) tog.setAttribute("aria-expanded", "true");
+        saveChapterOpen(track, chapterId, true);
+      }
+    }
+    const el = entryId ? document.getElementById("vocab-" + entryId) : null;
+    if (el) {
+      el.classList.add("search-hit");
+      requestAnimationFrame(() => el.scrollIntoView({ block: "center", behavior: "smooth" }));
+    }
+  }
+
   function renderMap(track, mode) {
     hideToast();
     mode = mode === "practice" ? "practice" : "learn";
     const pyish = usesPython(track);
     const prog = trackProgress(track);
     const intro = mode === "learn"
-      ? "בחרו נושא ללמידה. כל פריט מוסבר עם דוגמה. הלמידה לא פותחת תרגול אוטומטית."
+      ? (isVocab(track)
+        ? "מילון מונחים באנגלית מעולם SQL, פייתון ומדעי הנתונים. פתחו נושא כדי לראות תרגום, הסבר ודוגמה. החיפוש עובר על האנגלית ועל העברית."
+        : "בחרו נושא ללמידה. כל פריט מוסבר עם דוגמה. הלמידה לא פותחת תרגול אוטומטית.")
       : `בחרו נושא לתרגול. בכל סבב מופיעות עד ${SESSION_SIZE} שאלות אקראיות מתוך מאגר הנושא. ${prog.done} מתוך ${prog.total} נושאים כבר תורגלו · ${prog.stars} כוכבים.`;
     const title = (mode === "learn" ? "למידת " : "תרגול ") + trackLabel(track);
     const searchVal = escapeHtml(learnSearchQuery[track] || "");
     const searchBar = mode === "learn" ? `
         <div class="learn-search">
           <label class="sr-only" for="learn-search">חיפוש בחומר הלמידה</label>
-          <input id="learn-search" type="search" dir="rtl" placeholder="חיפוש בנושאים, הסברים ודוגמאות…" value="${searchVal}" autocomplete="off" />
+          <input id="learn-search" type="search" dir="rtl" placeholder="${isVocab(track) ? "חיפוש מונח באנגלית או בעברית…" : "חיפוש בנושאים, הסברים ודוגמאות…"}" value="${searchVal}" autocomplete="off" />
         </div>
         <div id="learn-search-results" class="search-results" hidden></div>` : "";
     $app.innerHTML = `
@@ -739,6 +822,11 @@
     bindTopicNodes(track, mode);
     bindChapters(track);
     if (mode === "learn") bindLearnSearch(track);
+    if (isVocab(track) && mode === "learn" && pendingLearnJump && pendingLearnJump.track === track) {
+      const jump = pendingLearnJump;
+      pendingLearnJump = null;
+      jumpToVocabEntry(track, jump.topicId, jump.entryId);
+    }
   }
 
   function renderLesson(track, topicId) {
@@ -850,6 +938,7 @@
           <span class="q-type">${TYPE_LABELS[q.type] || q.type}</span>
           <p class="q-prompt">${hebText(q.prompt)}</p>
           ${q.note ? `<p class="q-note">${escapeHtml(q.note)}</p>` : ""}
+          ${q.term ? `<pre class="code q-term" dir="ltr">${escapeHtml(q.term)}</pre>` : ""}
           ${q.code ? `<pre class="code">${escapeHtml(q.code)}</pre>` : ""}
           ${q.template && q.type === "fill" ? `<pre class="code">${escapeHtml(q.template)}</pre>` : ""}
           <div id="q-body"></div>
@@ -861,7 +950,7 @@
     document.getElementById("btn-back").onclick = () => {
       if (confirm("לצאת מהתרגול? ההתקדמות בסבב הזה תישמר רק אם סיימתם אותו.")) {
         session = null;
-        location.hash = "#" + (isPy ? "python" : "sql") + "/practice";
+        location.hash = "#" + session.track + "/practice";
       }
     };
     mountQuestion(q, done);
@@ -878,10 +967,10 @@
       const box = body.querySelector(".choices");
       q.choices.forEach((c, idx) => {
         const b = document.createElement("button");
-        b.className = "choice" + (looksLikeCode(c) ? " ltr" : "");
+        b.className = "choice" + (choiceIsLtr(q, c) ? " ltr" : "");
         b.type = "button";
         b.dataset.idx = String(idx);
-        b.innerHTML = looksLikeCode(c) ? `<span class="mono" dir="ltr">${escapeHtml(c)}</span>` : escapeHtml(c);
+        b.innerHTML = choiceIsLtr(q, c) ? `<span class="mono" dir="ltr">${escapeHtml(c)}</span>` : escapeHtml(c);
         if (already) {
           b.disabled = true;
           if (idx === q.answer) b.classList.add("correct");
@@ -903,16 +992,35 @@
       if (already && already.values) {
         body.querySelectorAll("input").forEach((inp, i) => { inp.value = already.values[i] || ""; });
       }
+    } else if (q.type === "match") {
+      const pairs = q.pairs || [];
+      const opts = window.Quiz && window.Quiz.shuffle ? window.Quiz.shuffle(pairs.map((p) => p.he)) : pairs.map((p) => p.he);
+      const prev = already && already.matches ? already.matches : [];
+      body.innerHTML = `<div class="vocab-match">${pairs.map((p, i) => {
+        const selected = prev[i] || "";
+        return `<div class="match-row">
+          <span class="term mono" dir="ltr">${escapeHtml(p.term)}</span>
+          <select class="match-sel" data-i="${i}" ${already ? "disabled" : ""}>
+            <option value="">בחרו משמעות</option>
+            ${opts.map((he) => `<option value="${escapeHtml(he)}"${selected === he ? " selected" : ""}>${escapeHtml(he)}</option>`).join("")}
+          </select>
+        </div>`;
+      }).join("")}</div>`;
+      if (already) {
+        body.querySelectorAll(".match-sel").forEach((sel, i) => {
+          sel.classList.add(sel.value === (pairs[i] && pairs[i].he) ? "correct" : "wrong");
+        });
+      }
     } else if (q.type === "write") {
       const starter = q.starter || "";
       body.innerHTML = `
         <textarea class="code" id="code-area" autocapitalize="off" spellcheck="false" ${already ? "disabled" : ""}>${escapeHtml(already && already.code != null ? already.code : starter)}</textarea>
-        ${!isPy ? `<p class="q-note" style="margin-top:8px">אפשר להריץ תצוגה מקדימה לפני הבדיקה. כשמבקשים עמודות מסוימות — בחרו אותן באותו סדר.</p>` : ""}
+        ${isSql(session.track) ? `<p class="q-note" style="margin-top:8px">אפשר להריץ תצוגה מקדימה לפני הבדיקה. כשמבקשים עמודות מסוימות — בחרו אותן באותו סדר.</p>` : ""}
       `;
     }
 
     if (!already) {
-      if (q.type === "write" && !isPy) {
+      if (q.type === "write" && isSql(session.track)) {
         const run = document.createElement("button");
         run.className = "ghost-btn";
         run.textContent = "הרצה";
@@ -929,7 +1037,7 @@
       };
       actions.appendChild(hintBtn);
 
-      if (!isPy) {
+      if (isSql(session.track)) {
         const dataBtn = document.createElement("button");
         dataBtn.className = "ghost-btn";
         dataBtn.textContent = "הצג טבלאות";
@@ -951,6 +1059,11 @@
 
   function looksLikeCode(s) {
     return /SELECT|FROM|WHERE|def |print\(|=>|::|\(\)|[{};]|LIKE |NULL/i.test(s) && s.length < 280;
+  }
+
+  function choiceIsLtr(q, s) {
+    if (q && q.englishChoices) return true;
+    return looksLikeCode(s);
   }
 
   async function ensureSql() {
@@ -1045,6 +1158,21 @@
         result.values = values;
         result.ok = fillsOk(q, values);
         document.querySelectorAll(".fill-row input").forEach((i) => (i.disabled = true));
+      } else if (q.type === "match") {
+        const sels = [...document.querySelectorAll(".match-sel")];
+        if (sels.some((s) => !s.value)) {
+          toast("השלימו את כל ההתאמות");
+          if (checkBtn) checkBtn.disabled = false;
+          return;
+        }
+        const matches = sels.map((s) => s.value);
+        result.matches = matches;
+        result.ok = (q.pairs || []).every((p, i) => matches[i] === p.he);
+        sels.forEach((s, i) => {
+          s.disabled = true;
+          const good = q.pairs && q.pairs[i] && s.value === q.pairs[i].he;
+          s.classList.add(good ? "correct" : "wrong");
+        });
       } else if (q.type === "write") {
         const code = document.getElementById("code-area").value;
         result.code = code;
@@ -1128,12 +1256,17 @@
     const extra = document.getElementById("q-extra");
     const ok = !!result.ok;
     let html = `<div class="feedback ${ok ? "ok" : "bad"}"><h4>${ok ? "כל הכבוד!" : "עוד לא, בואו נראה למה"}</h4>`;
-    html += `<div class="explain">${escapeHtml(q.explanation || "")}</div>`;
+    html += `<div class="explain">${hebText(q.explanation || "")}</div>`;
     if (!ok && q.expectedSql) {
       html += `<p>פתרון לדוגמה:</p><pre class="code">${escapeHtml(q.expectedSql)}</pre>`;
     }
     if (!ok && q.solution) {
       html += `<p>פתרון לדוגמה:</p><pre class="code">${escapeHtml(q.solution)}</pre>`;
+    }
+    if (!ok && q.type === "match" && q.pairs) {
+      html += `<p>ההתאמות הנכונות:</p><ul class="match-key">${q.pairs.map((p) =>
+        `<li><span class="mono" dir="ltr">${escapeHtml(p.term)}</span> — ${escapeHtml(p.he)}</li>`
+      ).join("")}</ul>`;
     }
     if (result.detail) {
       const d = result.detail;
@@ -1250,9 +1383,15 @@
     if (h === "python/practice") return renderMap("python", "practice");
     if (h === "data" || h === "data/learn") return renderMap("data", "learn");
     if (h === "data/practice") return renderMap("data", "practice");
+    if (h === "vocab" || h === "vocab/learn") return renderMap("vocab", "learn");
+    if (h === "vocab/practice") return renderMap("vocab", "practice");
     if (parts[0] === "sheet") return renderMap(parseTrack(parts[1]), "learn");
     if (parts[0] === "learn" && parts[1] && parts[2]) {
       const track = parseTrack(parts[1]);
+      if (track === "vocab") {
+        pendingLearnJump = pendingLearnJump || { track, topicId: parts[2] };
+        return renderMap("vocab", "learn");
+      }
       return renderLesson(track, parts[2]);
     }
     if (parts[0] === "play" && parts[1] && parts[2]) {
