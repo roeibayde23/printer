@@ -372,7 +372,7 @@
         "tests": [
           {
             "expr": "root",
-            "expected": 4.0
+            "expected": 4
           }
         ],
         "hint": "root = math.sqrt(16)",
@@ -735,11 +735,11 @@
           {
             "expr": "arr.tolist()",
             "expected": [
-              0.0,
-              0.0,
-              0.0,
-              0.0,
-              0.0
+              0,
+              0,
+              0,
+              0,
+              0
             ]
           }
         ],
@@ -796,9 +796,9 @@
           {
             "expr": "arr.tolist()",
             "expected": [
-              0.0,
-              5.0,
-              10.0
+              0,
+              5,
+              10
             ]
           }
         ],
@@ -1680,7 +1680,7 @@
           {
             "expr": "row_mean.tolist()",
             "expected": [
-              64.0,
+              64,
               57.6,
               51.8,
               42.8,
@@ -1690,11 +1690,11 @@
           {
             "expr": "row_median.tolist()",
             "expected": [
-              70.0,
-              75.0,
-              60.0,
-              40.0,
-              49.0
+              70,
+              75,
+              60,
+              40,
+              49
             ]
           }
         ],
@@ -2055,6 +2055,1200 @@
         "hint": "לאסוף מחירים מכל חנות שיש בה את המפתח, לקחת min, ולסכום רק פריטים שנמצאו.",
         "explanation": "Computer זול יותר בתל אביב (1500), Mouse זול יותר באילת (35), ו-Tablet חסר ולכן None ולא נכנס לסכום.",
         "solution": "import pandas as pd\n\ntelaviv = pd.Series({'Computer': 1500, 'Phone': 800, 'Cable': 50, 'Chair': 200, 'Desk': 450})\nhaifa = pd.Series({'Phone': 750, 'Cable': 60, 'Lamp': 90, 'Desk': 400, 'Mouse': 40})\neilat = pd.Series({'Computer': 1600, 'Chair': 180, 'Lamp': 100, 'Mouse': 35, 'Keyboard': 70})\n\ndef order_summary(items):\n    stores = [telaviv, haifa, eilat]\n    options = {}\n    total = 0\n    for item in items:\n        prices = [int(s[item]) for s in stores if item in s.index]\n        if prices:\n            best = min(prices)\n            options[item] = best\n            total += best\n        else:\n            options[item] = None\n    return {'total': total, 'options': options}",
+        "type": "write"
+      }
+    ]
+  },
+  {
+    "id": "pandas-dataframe",
+    "title": "Pandas DataFrame",
+    "short": "DataFrame",
+    "icon": "9",
+    "intro": "מהו DataFrame, איך יוצרים אותו ממטריצה או מ-CSV, ואיך בודקים אותו עם head, info ו-describe.",
+    "questions": [
+      {
+        "id": "pdf-1",
+        "prompt": "מהו Pandas DataFrame?",
+        "choices": [
+          "מבנה נתונים דו-ממדי עם שורות ועמודות מתויגות, שבו כל עמודה היא Series עם אינדקס משותף",
+          "מערך חד-ממדי בלבד, בלי שמות לעמודות",
+          "קובץ תמונה ששומר גרפים",
+          "פונקציה שמציירת תרשים עמודות"
+        ],
+        "answer": 0,
+        "hint": "חושבים על טבלה, כמו אקסל או SQL.",
+        "explanation": "DataFrame הוא טבלה דו-ממדית, ניתנת לשינוי בגודל, עם תוויות לשורות ולעמודות. כל עמודה היא Series.",
+        "type": "mcq"
+      },
+      {
+        "id": "pdf-2",
+        "prompt": "מה קורה כשמוסיפים index= או columns= ביצירת DataFrame?",
+        "choices": [
+          "נוספת שכבת תוויות; עדיין אפשר לגשת גם לפי מיקום מספרי וגם לפי התווית",
+          "האינדקס המספרי נמחק לגמרי ואי אפשר יותר להשתמש ב-iloc",
+          "הטבלה הופכת ל-Series",
+          "Pandas מוחק את הנתונים ומשאיר רק את התוויות"
+        ],
+        "answer": 0,
+        "hint": "כמו ב-Series: תווית מותאמת היא תוספת, לא תחליף מלא.",
+        "explanation": "התוויות המותאמות לא מחליפות את האינדקס המספרי. יש גישה כפולה: לפי מיקום ולפי תווית.",
+        "type": "mcq"
+      },
+      {
+        "id": "pdf-3",
+        "prompt": "למה משמש pd.read_csv?",
+        "choices": [
+          "לטעון קובץ CSV מהמחשב (לפי נתיב מלא) ולהפוך אותו ל-DataFrame",
+          "רק לשמור תמונה של הטבלה",
+          "רק לחשב ממוצע בלי ליצור טבלה",
+          "למחוק את כל העמודות מקובץ הטקסט"
+        ],
+        "answer": 0,
+        "hint": "CSV הוא טבלה בטקסט. Pandas הופך אותה ל-DataFrame.",
+        "explanation": "pd.read_csv(נתיב) טוען את הקובץ כטבלה עם שורות ועמודות.",
+        "type": "mcq"
+      },
+      {
+        "id": "pdf-4",
+        "prompt": "מה יודפס?",
+        "code": "import pandas as pd\ndf = pd.DataFrame([[1, 2], [3, 4]], columns=['A', 'B'], index=['r1', 'r2'])\nprint(df.loc['r2', 'A'])",
+        "choices": [
+          "3",
+          "1",
+          "4",
+          "r2"
+        ],
+        "answer": 0,
+        "hint": "loc ניגש לפי תווית שורה ואז תווית עמודה.",
+        "explanation": "השורה r2 והעמודה A מכילות את 3.",
+        "type": "predict"
+      },
+      {
+        "id": "pdf-5",
+        "prompt": "ייבאו pandas כ-pd וצרו df = pd.DataFrame([[1, 2], [3, 4]]).",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "df.values.tolist()",
+            "expected": [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ]
+          },
+          {
+            "expr": "df.shape[0]",
+            "expected": 2
+          },
+          {
+            "expr": "df.shape[1]",
+            "expected": 2
+          }
+        ],
+        "hint": "מעבירים מטריצה (רשימת רשימות) ל-pd.DataFrame.",
+        "explanation": "בלי columns/index מתקבלים אינדקסים מספריים כברירת מחדל לשורות ולעמודות.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame([[1, 2], [3, 4]])",
+        "type": "write"
+      },
+      {
+        "id": "pdf-6",
+        "prompt": "ייבאו pandas כ-pd. צרו df מ-[[1, 2], [3, 4]] עם columns=['A', 'B'] ו-index=['row1', 'row2'].",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "list(df.columns)",
+            "expected": [
+              "A",
+              "B"
+            ]
+          },
+          {
+            "expr": "list(df.index)",
+            "expected": [
+              "row1",
+              "row2"
+            ]
+          },
+          {
+            "expr": "df.loc['row1', 'B']",
+            "expected": 2
+          }
+        ],
+        "hint": "מוסרים columns= ו-index= ל-DataFrame.",
+        "explanation": "סדר הרשימות קובע את סדר תוויות השורות והעמודות.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame([[1, 2], [3, 4]], columns=['A', 'B'], index=['row1', 'row2'])",
+        "type": "write"
+      },
+      {
+        "id": "pdf-7",
+        "prompt": "ייבאו pandas כ-pd. צרו df עם עמודה n שווה ל-[10, 20, 30, 40]. שמרו ב-first את שתי השורות הראשונות (ערכי n כרשימה) וב-last את השורה האחרונה (ערכי n כרשימה).",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "first",
+            "expected": [
+              10,
+              20
+            ]
+          },
+          {
+            "expr": "last",
+            "expected": [
+              40
+            ]
+          }
+        ],
+        "hint": "head(2) ו-tail(1).",
+        "explanation": "head מחזיר מההתחלה, tail מהסוף.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'n': [10, 20, 30, 40]})\nfirst = df.head(2)['n'].tolist()\nlast = df.tail(1)['n'].tolist()",
+        "type": "write"
+      },
+      {
+        "id": "pdf-8",
+        "prompt": "ייבאו pandas כ-pd. צרו df = pd.DataFrame({'a': [1, 2], 'b': [3, 4]}). שמרו ב-cols את רשימת שמות העמודות וב-idx את רשימת האינדקס.",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "cols",
+            "expected": [
+              "a",
+              "b"
+            ]
+          },
+          {
+            "expr": "idx",
+            "expected": [
+              0,
+              1
+            ]
+          }
+        ],
+        "hint": "df.columns ו-df.index, ולהמיר לרשימה.",
+        "explanation": "columns הם שמות העמודות, index הם תוויות השורות (כאן 0 ו-1).",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'a': [1, 2], 'b': [3, 4]})\ncols = list(df.columns)\nidx = list(df.index)",
+        "type": "write"
+      },
+      {
+        "id": "pdf-9",
+        "prompt": "ייבאו pandas כ-pd. צרו df = pd.DataFrame({'a': [10, 20, 30], 'b': [2, 4, 6]}). שמרו ב-mean_a את ממוצע העמודה a מתוך describe, וב-t_index את רשימת האינדקס של df.describe().T (שמות העמודות המקוריות).",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "mean_a",
+            "expected": 20.0
+          },
+          {
+            "expr": "t_index",
+            "expected": [
+              "a",
+              "b"
+            ]
+          }
+        ],
+        "hint": "describe().loc['mean', 'a'] ו-describe().T.index.",
+        "explanation": "transpose/.T הופך את תצוגת describe כך ששמות העמודות הופכים לאינדקס.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'a': [10, 20, 30], 'b': [2, 4, 6]})\nmean_a = df.describe().loc['mean', 'a']\nt_index = list(df.describe().T.index)",
+        "type": "write"
+      },
+      {
+        "id": "pdf-10",
+        "prompt": "ייבאו pandas כ-pd וגם io. קראו DataFrame בשם df מתוך המחרוזת 'name,age\\nDana,20\\nRoei,30' בעזרת pd.read_csv ו-io.StringIO.",
+        "starter": "import pandas as pd\nimport io\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "list(df.columns)",
+            "expected": [
+              "name",
+              "age"
+            ]
+          },
+          {
+            "expr": "df['name'].tolist()",
+            "expected": [
+              "Dana",
+              "Roei"
+            ]
+          },
+          {
+            "expr": "df['age'].tolist()",
+            "expected": [
+              20,
+              30
+            ]
+          }
+        ],
+        "hint": "pd.read_csv(io.StringIO(המחרוזת)).",
+        "explanation": "כך מתרגלים read_csv בלי קובץ בדיסק. בקורס מעבירים נתיב מלא לקובץ.",
+        "solution": "import pandas as pd\nimport io\ndf = pd.read_csv(io.StringIO('name,age\\nDana,20\\nRoei,30'))",
+        "type": "write"
+      },
+      {
+        "id": "pdf-11",
+        "prompt": "ייבאו pandas כ-pd. צרו df = pd.DataFrame({'x': [5, 15, 25]}). שמרו ב-desc את התוצאה של df.describe(), וב-mn את ערך mean של העמודה x.",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "mn",
+            "expected": 15.0
+          },
+          {
+            "expr": "int(desc.loc['count', 'x'])",
+            "expected": 3
+          }
+        ],
+        "hint": "describe מחזיר בין השאר count ו-mean.",
+        "explanation": "info מציג סוגים וזיכרון; describe מציג סטטיסטיקות מספריות.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'x': [5, 15, 25]})\ndesc = df.describe()\nmn = desc.loc['mean', 'x']",
+        "type": "write"
+      },
+      {
+        "id": "pdf-12",
+        "prompt": "ייבאו pandas כ-pd. צרו df עם העמודות city=['Haifa', 'Eilat', 'Eilat'] ו-temp=[22, 30, 31]. שמרו ב-n_rows את מספר השורות וב-n_cols את מספר העמודות.",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "n_rows",
+            "expected": 3
+          },
+          {
+            "expr": "n_cols",
+            "expected": 2
+          },
+          {
+            "expr": "df['city'].tolist()",
+            "expected": [
+              "Haifa",
+              "Eilat",
+              "Eilat"
+            ]
+          }
+        ],
+        "hint": "shape הוא (שורות, עמודות).",
+        "explanation": "shape[0] שורות, shape[1] עמודות. זה משלים את מה ש-info מציג.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'city': ['Haifa', 'Eilat', 'Eilat'], 'temp': [22, 30, 31]})\nn_rows = df.shape[0]\nn_cols = df.shape[1]",
+        "type": "write"
+      }
+    ]
+  },
+  {
+    "id": "pandas-select",
+    "title": "עמודות, אינדקס וסינון",
+    "short": "בחירה וסינון",
+    "icon": "10",
+    "intro": "בחירת עמודות, הוספה ומחיקה, set_index/loc/iloc, וסינון לפי תנאים, כולל & | ~ ו-between.",
+    "questions": [
+      {
+        "id": "pdc-1",
+        "prompt": "ב-df.drop(..., axis=1) מה נמחק?",
+        "choices": [
+          "עמודה לפי השם שמוסרים",
+          "שורה לפי האינדקס שמוסרים",
+          "כל הערכים החסרים בטבלה",
+          "רק את האינדקס, בלי לגעת בעמודות"
+        ],
+        "answer": 0,
+        "hint": "axis=0 שורות, axis=1 עמודות.",
+        "explanation": "axis=1 מוחק עמודה לפי שמה; axis=0 מוחק שורה לפי האינדקס.",
+        "type": "mcq"
+      },
+      {
+        "id": "pdc-2",
+        "prompt": "מה עושה inplace=True ב-drop או ב-set_index?",
+        "choices": [
+          "משנה את ה-DataFrame המקורי במקום להחזיר רק עותק חדש",
+          "תמיד מוחק את כל העמודות",
+          "שומר את הטבלה לקובץ CSV",
+          "מבטל את הפעולה הקודמת"
+        ],
+        "answer": 0,
+        "hint": "בלי inplace המקור נשאר, ומתקבל אובייקט חדש.",
+        "explanation": "אפשר גם לדרוס את המשתנה: df = df.drop(...). inplace=True משנה במקום.",
+        "type": "mcq"
+      },
+      {
+        "id": "pdc-3",
+        "prompt": "איך מחברים כמה תנאי סינון ב-Pandas?",
+        "choices": [
+          "עם &, | ו-~ (וסוגריים סביב כל תנאי), לא עם and/or/not של פייתון",
+          "רק עם המילה and כמו במשפט",
+          "אי אפשר יותר מתנאי אחד",
+          "רק עם פונקציית if על כל הטבלה בבת אחת"
+        ],
+        "answer": 0,
+        "hint": "האופרטורים המיוחדים של Pandas על מסכות.",
+        "explanation": "& זה AND, | זה OR, ~ זה NOT. חובה סוגריים, אחרת תהיה שגיאת קדימות.",
+        "type": "mcq"
+      },
+      {
+        "id": "pdc-4",
+        "prompt": "מה יודפס?",
+        "code": "import pandas as pd\ndf = pd.DataFrame({'n': [10, 20, 30, 40]}, index=['a', 'b', 'c', 'd'])\nprint(df.iloc[1:3]['n'].tolist())",
+        "choices": [
+          "[20, 30]",
+          "[20, 30, 40]",
+          "[10, 20, 30]",
+          "[b, c]"
+        ],
+        "answer": 0,
+        "hint": "iloc עם חיתוך כמו בפייתון: כולל את ההתחלה, בלי הסוף.",
+        "explanation": "אינדקסי המיקום 1 ו-2 הם 20 ו-30. 3 לא נכלל.",
+        "type": "predict"
+      },
+      {
+        "id": "pdc-5",
+        "prompt": "ייבאו pandas כ-pd. צרו df = pd.DataFrame({'a': [1, 2], 'b': [10, 20], 'c': [7, 8]}). שמרו ב-one את ערכי העמודה a כרשימה, וב-two את הטבלה רק עם העמודות a ו-c כרשימת רשימות (values.tolist()).",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "one",
+            "expected": [
+              1,
+              2
+            ]
+          },
+          {
+            "expr": "two",
+            "expected": [
+              [
+                1,
+                7
+              ],
+              [
+                2,
+                8
+              ]
+            ]
+          }
+        ],
+        "hint": "עמודה אחת בסוגריים רגילים, כמה עמודות ברשימה כפולה.",
+        "explanation": "df['a'] הוא Series; df[['a', 'c']] הוא DataFrame.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'a': [1, 2], 'b': [10, 20], 'c': [7, 8]})\none = df['a'].tolist()\ntwo = df[['a', 'c']].values.tolist()",
+        "type": "write"
+      },
+      {
+        "id": "pdc-6",
+        "prompt": "ייבאו pandas כ-pd. צרו df עם col1=[1, 2] ו-col2=[10, 20]. הוסיפו עמודה new_col שהיא סכום col1 ו-col2.",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "df['new_col'].tolist()",
+            "expected": [
+              11,
+              22
+            ]
+          },
+          {
+            "expr": "list(df.columns)",
+            "expected": [
+              "col1",
+              "col2",
+              "new_col"
+            ]
+          }
+        ],
+        "hint": "df['new_col'] = df['col1'] + df['col2'].",
+        "explanation": "השמה לשם חדש בסוגריים מרובעים יוצרת עמודה; לשם קיים — מעדכנת.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'col1': [1, 2], 'col2': [10, 20]})\ndf['new_col'] = df['col1'] + df['col2']",
+        "type": "write"
+      },
+      {
+        "id": "pdc-7",
+        "prompt": "ייבאו pandas כ-pd. צרו df עם a=[1, 2, 3] ו-b=[10, 20, 30]. מחקו את העמודה b מהטבלה עצמה (inplace) כך שהשינוי יישאר ב-df.",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "list(df.columns)",
+            "expected": [
+              "a"
+            ]
+          },
+          {
+            "expr": "df['a'].tolist()",
+            "expected": [
+              1,
+              2,
+              3
+            ]
+          }
+        ],
+        "hint": "drop עם axis=1 ו-inplace=True.",
+        "explanation": "בלי inplace היינו מקבלים עותק, והמשתנה df היה נשאר עם b.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'a': [1, 2, 3], 'b': [10, 20, 30]})\ndf.drop('b', axis=1, inplace=True)",
+        "type": "write"
+      },
+      {
+        "id": "pdc-8",
+        "prompt": "ייבאו pandas כ-pd. צרו df = pd.DataFrame({'id': ['p1', 'p2'], 'n': [10, 20]}). קבעו את העמודה id כאינדקס (ושמרו את התוצאה ב-df). אחר כך שמרו ב-idx את רשימת האינדקס וב-cols את רשימת העמודות שנשארו.",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "idx",
+            "expected": [
+              "p1",
+              "p2"
+            ]
+          },
+          {
+            "expr": "cols",
+            "expected": [
+              "n"
+            ]
+          },
+          {
+            "expr": "int(df.loc['p1', 'n'])",
+            "expected": 10
+          }
+        ],
+        "hint": "set_index('id'). העמודה שנבחרה יוצאת מרשימת העמודות.",
+        "explanation": "reset_index יחזיר את id להיות עמודה רגילה.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'id': ['p1', 'p2'], 'n': [10, 20]})\ndf = df.set_index('id')\nidx = list(df.index)\ncols = list(df.columns)",
+        "type": "write"
+      },
+      {
+        "id": "pdc-9",
+        "prompt": "ייבאו pandas כ-pd. צרו df עם n=[10, 20, 30, 40] ואינדקס ['a','b','c','d']. שמרו ב-mid את ערכי n של df.iloc[1:3] כרשימה, וב-picked את ערכי n של df.loc[['a', 'c']] כרשימה.",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "mid",
+            "expected": [
+              20,
+              30
+            ]
+          },
+          {
+            "expr": "picked",
+            "expected": [
+              10,
+              30
+            ]
+          }
+        ],
+        "hint": "iloc לפי מיקום (חיתוך בלי הסוף), loc לפי תוויות ברשימה.",
+        "explanation": "iloc[1:3] אלו שורות המיקום 1 ו-2. loc בוחר לפי השמות a ו-c.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'n': [10, 20, 30, 40]}, index=['a', 'b', 'c', 'd'])\nmid = df.iloc[1:3]['n'].tolist()\npicked = df.loc[['a', 'c']]['n'].tolist()",
+        "type": "write"
+      },
+      {
+        "id": "pdc-10",
+        "prompt": "ייבאו pandas כ-pd. צרו שתי טבלאות: a עם x=[1, 2] ו-b עם x=[3]. שמרו ב-out את pd.concat שלהן עם ignore_index=True, וב-vals את ערכי x של out כרשימה.",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "vals",
+            "expected": [
+              1,
+              2,
+              3
+            ]
+          },
+          {
+            "expr": "len(out)",
+            "expected": 3
+          }
+        ],
+        "hint": "pd.concat([a, b], ignore_index=True).",
+        "explanation": "append הוצא משימוש; לשרשור טבלאות משתמשים ב-concat.",
+        "solution": "import pandas as pd\na = pd.DataFrame({'x': [1, 2]})\nb = pd.DataFrame({'x': [3]})\nout = pd.concat([a, b], ignore_index=True)\nvals = out['x'].tolist()",
+        "type": "write"
+      },
+      {
+        "id": "pdc-11",
+        "prompt": "ייבאו pandas כ-pd. צרו df עם country=['USA','Canada','Italy'], population=[80, 40, 60], year=[1776, 1867, 1861]. שמרו ב-big את שמות המדינות עם population גדול מ-50, ב-combo את שמות המדינות עם population > 50 וגם country שווה ל-USA או ל-Canada, וב-not1776 את שמות המדינות ששנתן אינה 1776.",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "big",
+            "expected": [
+              "USA",
+              "Italy"
+            ]
+          },
+          {
+            "expr": "combo",
+            "expected": [
+              "USA"
+            ]
+          },
+          {
+            "expr": "not1776",
+            "expected": [
+              "Canada",
+              "Italy"
+            ]
+          }
+        ],
+        "hint": "מסכה בסוגריים, עם & | ו-~ כמו בשקפי השיעור.",
+        "explanation": "קודם בונים Series בוליאני, ואז df[מסכה] מחזיר את השורות המתאימות.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'country': ['USA', 'Canada', 'Italy'], 'population': [80, 40, 60], 'year': [1776, 1867, 1861]})\nbig = df[df['population'] > 50]['country'].tolist()\ncombo = df[(df['population'] > 50) & ((df['country'] == 'USA') | (df['country'] == 'Canada'))]['country'].tolist()\nnot1776 = df[~(df['year'] == 1776)]['country'].tolist()",
+        "type": "write"
+      },
+      {
+        "id": "pdc-12",
+        "prompt": "תרגיל כיתתי בסגנון tips: ייבאו pandas כ-pd. צרו df עם Payer Name=['Avi','Dana','Gadi'], total_bill=[40, 18, 32], tip=[5, 1, 4], sex=['Male','Female','Male']. שמרו ב-pay את הטבלה רק עם העמודות Payer Name, tip ו-total_bill. הוסיפו ל-pay עמודה total_payment שהיא total_bill+tip ועמודה tip_percentage שהיא (tip/total_payment)*100. שמרו ב-males30 את שמות המשלמים עם total_bill מעל 30 ו-sex שווה ל-Male, וב-generous את שמות המשלמים שהטיפ שלהם מעל 10% מ-total_bill.",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "list(pay.columns)",
+            "expected": [
+              "Payer Name",
+              "tip",
+              "total_bill",
+              "total_payment",
+              "tip_percentage"
+            ]
+          },
+          {
+            "expr": "pay['total_payment'].tolist()",
+            "expected": [
+              45,
+              19,
+              36
+            ]
+          },
+          {
+            "expr": "males30",
+            "expected": [
+              "Avi",
+              "Gadi"
+            ]
+          },
+          {
+            "expr": "generous",
+            "expected": [
+              "Avi",
+              "Gadi"
+            ]
+          }
+        ],
+        "hint": "זה התרגיל הכיתתי משיעור 20, על טבלה קטנה במקום tips.csv.",
+        "explanation": "total_payment הוא חשבון+טיפ. אחוז הטיפ מהתשלום הכולל הוא tip/total_payment. הסינון השני בשקף הוא טיפ מעל 10% מהחשבון (total_bill). בשקף נכתב tip_precentage — כאן השם הנכון tip_percentage.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'Payer Name': ['Avi', 'Dana', 'Gadi'], 'total_bill': [40, 18, 32], 'tip': [5, 1, 4], 'sex': ['Male', 'Female', 'Male']})\npay = df[['Payer Name', 'tip', 'total_bill']].copy()\npay['total_payment'] = pay['total_bill'] + pay['tip']\npay['tip_percentage'] = pay['tip'] / pay['total_payment'] * 100\nmales30 = df[(df['total_bill'] > 30) & (df['sex'] == 'Male')]['Payer Name'].tolist()\ngenerous = df[(df['tip'] / df['total_bill']) > 0.1]['Payer Name'].tolist()",
+        "type": "write"
+      }
+    ]
+  },
+  {
+    "id": "pandas-transform",
+    "title": "apply, מיון וערכים",
+    "short": "פונקציות וערכים",
+    "icon": "11",
+    "intro": "apply ו-np.vectorize לפונקציות מותאמות, מיון, ספירת ערכים, החלפה, כפילויות, ו-nlargest/nsmallest.",
+    "questions": [
+      {
+        "id": "pdt-1",
+        "prompt": "מתי משתמשים ב-df['col'].apply(func)?",
+        "choices": [
+          "כשרוצים להפעיל פונקציית פייתון מותאמת על כל ערך בעמודה אחת",
+          "רק כדי למיין את הטבלה מהגדול לקטן",
+          "רק כדי למחוק שורות כפולות",
+          "כדי לשמור את הטבלה לקובץ בלבד"
+        ],
+        "answer": 0,
+        "hint": "בשיעור: ארבע הספרות האחרונות של כרטיס אשראי.",
+        "explanation": "apply מעביר כל ערך בעמודה לפונקציה ומחזיר את התוצאות, למשל לעמודה חדשה.",
+        "type": "mcq"
+      },
+      {
+        "id": "pdt-2",
+        "prompt": "מה ההבדל בין unique, nunique ו-value_counts על עמודה?",
+        "choices": [
+          "unique מחזיר את הערכים הייחודיים, nunique את מספרם, ו-value_counts כמה פעמים כל ערך מופיע",
+          "כולם מחזירים בדיוק את אותו דבר תמיד",
+          "value_counts מוחק כפילויות מהטבלה עצמה",
+          "nunique מחזיר את השורה עם הערך הגדול ביותר"
+        ],
+        "answer": 0,
+        "hint": "שלוש שאלות שונות: מה הערכים, כמה סוגים, כמה מכל סוג.",
+        "explanation": "למשל על מין: unique ייתן Male/Female, nunique ייתן 2, value_counts יספור כמה מכל אחד.",
+        "type": "mcq"
+      },
+      {
+        "id": "pdt-3",
+        "prompt": "מה נכון לגבי replace ו-map להחלפת ערכים בעמודה?",
+        "choices": [
+          "replace מקבל לרוב רשימות ישן/חדש לפי סדר, ו-map מקבל מילון {ישן: חדש}",
+          "שתי השיטות מוחקות את העמודה",
+          "map עובד רק על אינדקס מספרי, לא על ערכים",
+          "replace יודע רק למלא NaN ולא להחליף מחרוזות"
+        ],
+        "answer": 0,
+        "hint": "בשיעור החליפו Female/Male ב-F/M בשתי הדרכים.",
+        "explanation": "הפונקציונליות דומה; המילון של map לעיתים קריא יותר.",
+        "type": "mcq"
+      },
+      {
+        "id": "pdt-4",
+        "prompt": "מה יודפס?",
+        "code": "def last_four(num):\n    return str(num)[-4:]\nprint(last_four(3560325168603410))",
+        "choices": [
+          "3410",
+          "3560",
+          "0341",
+          "1603"
+        ],
+        "answer": 0,
+        "hint": "ממירים למחרוזת וחותכים את ארבעת התווים האחרונים.",
+        "explanation": "זו הפונקציה מהשיעור, לפני שמפעילים עליה apply.",
+        "type": "predict"
+      },
+      {
+        "id": "pdt-5",
+        "prompt": "ייבאו pandas כ-pd. הגדירו last_four שמחזירה את ארבע הספרות האחרונות של המספר (כמחרוזת). צרו df עם CC Number=[3560325168603410, 1234567890123456] והוסיפו עמודה last_four בעזרת apply.",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "df['last_four'].tolist()",
+            "expected": [
+              "3410",
+              "3456"
+            ]
+          }
+        ],
+        "hint": "str(num)[-4:] ואז apply על העמודה.",
+        "explanation": "אין פונקציה מובנית ל'ארבע אחרונות' — לכן כותבים פונקציה ומפעילים apply, כמו בשיעור 21.",
+        "solution": "import pandas as pd\ndef last_four(num):\n    return str(num)[-4:]\ndf = pd.DataFrame({'CC Number': [3560325168603410, 1234567890123456]})\ndf['last_four'] = df['CC Number'].apply(last_four)",
+        "type": "write"
+      },
+      {
+        "id": "pdt-6",
+        "prompt": "ייבאו numpy כ-np ו-pandas כ-pd. הגדירו quality(total_bill, tip) שמחזירה 'Generous' אם tip/total_bill גדול מ-0.25, אחרת 'Not Generous'. צרו df עם total_bill=[20, 10] ו-tip=[3, 3], והוסיפו עמודה quality בעזרת np.vectorize.",
+        "starter": "import numpy as np\nimport pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "df['quality'].tolist()",
+            "expected": [
+              "Not Generous",
+              "Generous"
+            ]
+          }
+        ],
+        "hint": "np.vectorize(quality)(df['total_bill'], df['tip']).",
+        "explanation": "vectorize מתאים פונקציית פייתון לכמה עמודות בבת אחת. 3/20=0.15 לא נדיב, 3/10=0.3 נדיב.",
+        "solution": "import numpy as np\nimport pandas as pd\ndef quality(total_bill, tip):\n    if tip / total_bill > 0.25:\n        return 'Generous'\n    return 'Not Generous'\ndf = pd.DataFrame({'total_bill': [20, 10], 'tip': [3, 3]})\ndf['quality'] = np.vectorize(quality)(df['total_bill'], df['tip'])",
+        "type": "write"
+      },
+      {
+        "id": "pdt-7",
+        "prompt": "ייבאו pandas כ-pd. צרו df עם name=['A','B','C'] , tip=[5, 1, 5] ו-n=[2, 9, 1]. שמרו ב-names את רשימת השמות אחרי מיון לפי tip ואז n, שניהם בסדר יורד (ascending=False).",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "names",
+            "expected": [
+              "A",
+              "C",
+              "B"
+            ]
+          }
+        ],
+        "hint": "sort_values עם רשימת עמודות ו-ascending=False.",
+        "explanation": "קודם tip מהגדול לקטן, ואז בין שווים לפי n. לכן A (5,2) לפני C (5,1), ו-B בסוף.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'name': ['A', 'B', 'C'], 'tip': [5, 1, 5], 'n': [2, 9, 1]})\nnames = df.sort_values(['tip', 'n'], ascending=False)['name'].tolist()",
+        "type": "write"
+      },
+      {
+        "id": "pdt-8",
+        "prompt": "ייבאו pandas כ-pd. צרו df עם sex=['Male','Female','Male','Male']. שמרו ב-counts את value_counts כמילון, ב-nuniq את nunique, וב-uniq את הערכים הייחודיים כרשימה ממוינת.",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "counts",
+            "expected": {
+              "Male": 3,
+              "Female": 1
+            }
+          },
+          {
+            "expr": "nuniq",
+            "expected": 2
+          },
+          {
+            "expr": "uniq",
+            "expected": [
+              "Female",
+              "Male"
+            ]
+          }
+        ],
+        "hint": "value_counts().to_dict(), nunique(), unique().",
+        "explanation": "counts סופר, nunique מונה סוגים, unique מחזיר את הערכים עצמם.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'sex': ['Male', 'Female', 'Male', 'Male']})\ncounts = df['sex'].value_counts().to_dict()\nnuniq = int(df['sex'].nunique())\nuniq = sorted(df['sex'].unique().tolist())",
+        "type": "write"
+      },
+      {
+        "id": "pdt-9",
+        "prompt": "ייבאו pandas כ-pd. צרו df עם sex=['Female','Male','Female']. שמרו ב-by_replace את העמודה אחרי replace של Female/Male ל-F/M, וב-by_map את אותה החלפה עם map ומילון.",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "by_replace",
+            "expected": [
+              "F",
+              "M",
+              "F"
+            ]
+          },
+          {
+            "expr": "by_map",
+            "expected": [
+              "F",
+              "M",
+              "F"
+            ]
+          }
+        ],
+        "hint": "replace עם שתי רשימות, או map עם מילון.",
+        "explanation": "שתי הדרכים נלמדו בשיעור 21 ומגיעות לאותה תוצאה.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'sex': ['Female', 'Male', 'Female']})\nby_replace = df['sex'].replace(['Female', 'Male'], ['F', 'M']).tolist()\nby_map = df['sex'].map({'Female': 'F', 'Male': 'M'}).tolist()",
+        "type": "write"
+      },
+      {
+        "id": "pdt-10",
+        "prompt": "ייבאו pandas כ-pd. צרו df עם a=[1, 2, 1, 1]. שמרו ב-flags את תוצאת duplicated על העמודה a כרשימה, וב-clean את ערכי a אחרי drop_duplicates כרשימה.",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "flags",
+            "expected": [
+              false,
+              false,
+              true,
+              true
+            ]
+          },
+          {
+            "expr": "clean",
+            "expected": [
+              1,
+              2
+            ]
+          }
+        ],
+        "hint": "ההופעה הראשונה היא False; הבאות True. drop_duplicates משאיר את הראשונה.",
+        "explanation": "1 מופיע שוב בשורות 2 ו-3 (מניה מ-0), לכן שם True.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'a': [1, 2, 1, 1]})\nflags = df['a'].duplicated().tolist()\nclean = df.drop_duplicates()['a'].tolist()",
+        "type": "write"
+      },
+      {
+        "id": "pdt-11",
+        "prompt": "ייבאו pandas כ-pd. צרו df עם name=['A','B','C','D'] ו-tip=[1, 9, 3, 7]. שמרו ב-top את שני השמות עם הטיפ הגדול ביותר (nlargest), וב-low את השם עם הטיפ הקטן ביותר (nsmallest), כרשימות.",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "top",
+            "expected": [
+              "B",
+              "D"
+            ]
+          },
+          {
+            "expr": "low",
+            "expected": [
+              "A"
+            ]
+          }
+        ],
+        "hint": "nlargest(2, 'tip') ו-nsmallest(1, 'tip').",
+        "explanation": "sample לדגימה אקראית לא נבדק כאן, כי בלי random_state התוצאה משתנה.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'name': ['A', 'B', 'C', 'D'], 'tip': [1, 9, 3, 7]})\ntop = df.nlargest(2, 'tip')['name'].tolist()\nlow = df.nsmallest(1, 'tip')['name'].tolist()",
+        "type": "write"
+      },
+      {
+        "id": "pdt-12",
+        "prompt": "ייבאו numpy כ-np ו-pandas כ-pd. הגדירו calc_percent(t_bill, tip) שמחזירה round(tip / t_bill * 100, 2). צרו df עם total_bill=[20, 50] ו-tip=[5, 7], והוסיפו עמודה tip_percent בעזרת np.vectorize(calc_percent).",
+        "starter": "import numpy as np\nimport pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "df['tip_percent'].tolist()",
+            "expected": [
+              25.0,
+              14.0
+            ]
+          }
+        ],
+        "hint": "זו דוגמת הסיכום של שיעור 21 לחישוב אחוז טיפ.",
+        "explanation": "vectorize מפעיל את הפונקציה על שתי העמודות ומעגל לשתי ספרות.",
+        "solution": "import numpy as np\nimport pandas as pd\ndef calc_percent(t_bill, tip):\n    return round(tip / t_bill * 100, 2)\ndf = pd.DataFrame({'total_bill': [20, 50], 'tip': [5, 7]})\ndf['tip_percent'] = np.vectorize(calc_percent)(df['total_bill'], df['tip'])",
+        "type": "write"
+      }
+    ]
+  },
+  {
+    "id": "pandas-missing",
+    "title": "ערכים חסרים",
+    "short": "חסרים / NaN",
+    "icon": "12",
+    "intro": "שלוש אסטרטגיות לטיפול בחסרים, זיהוי עם isnull/notnull, מחיקה עם dropna (thresh, subset) ומילוי עם fillna.",
+    "questions": [
+      {
+        "id": "pdm-1",
+        "prompt": "אילו שלוש דרכים עיקריות יש לטיפול בערכים חסרים, לפי השיעור?",
+        "choices": [
+          "להשאיר את ה-NaN, למחוק שורות/עמודות עם חסרים, או למלא בערך אחר",
+          "רק להמיר הכול למחרוזות",
+          "רק לצייר גרף ולהתעלם מהטבלה",
+          "חובה תמיד למחוק את כל העמודות בטבלה"
+        ],
+        "answer": 0,
+        "hint": "Keep, Delete, או Fill.",
+        "explanation": "לכל דרך יש יתרונות וחסרונות: מקוריות מול תאימות ספריות, אובדן מידע, או סיכון במילוי שגוי.",
+        "type": "mcq"
+      },
+      {
+        "id": "pdm-2",
+        "prompt": "למה בודקים ערך בודד של np.nan עם is ולא עם ==?",
+        "choices": [
+          "כי np.nan == np.nan הוא False, ואילו np.nan is np.nan הוא True",
+          "כי האופרטור is אסור בפייתון",
+          "כי == מוחק את העמודה",
+          "אין הבדל, תמיד מתקבלת אותה תוצאה"
+        ],
+        "answer": 0,
+        "hint": "זו בדיקת זהות האובייקט, לא שוויון מספרי.",
+        "explanation": "בטבלה נוח יותר להשתמש ב-isnull/isna, שמיועדים בדיוק לזה.",
+        "type": "mcq"
+      },
+      {
+        "id": "pdm-3",
+        "prompt": "מתי הגיוני למחוק עמודה שלמה בגלל חסרים, ומתי שורה?",
+        "choices": [
+          "מוחקים שורה כשרוב ערכיה חסרים, ועמודה כשברוב השורות היא ריקה; כדאי לבדוק קודם את אחוז המחיקה",
+          "תמיד מוחקים את כל הטבלה ברגע שיש NaN אחד",
+          "אסור למחוק שורות, רק עמודות",
+          "מוחקים רק אם אין אף ערך חסר"
+        ],
+        "answer": 0,
+        "hint": "שורה חסרה מול עמודה חסרה, ואחוז מהמקור.",
+        "explanation": "אם האחוז גבוה, השיעור ממליץ לנסות לאסוף נתונים מחדש במקום למחוק.",
+        "type": "mcq"
+      },
+      {
+        "id": "pdm-4",
+        "prompt": "מה יודפס?",
+        "code": "import pandas as pd\ndf = pd.DataFrame({'first_name': ['Ana', None, 'Ben']})\nprint(df['first_name'].isnull().tolist())",
+        "choices": [
+          "[False, True, False]",
+          "[True, False, True]",
+          "[False, False, False]",
+          "[None, True, None]"
+        ],
+        "answer": 0,
+        "hint": "isnull מחזיר True רק במקום החסר.",
+        "explanation": "Ana ו-Ben קיימים (False); הערך האמצעי חסר (True).",
+        "type": "predict"
+      },
+      {
+        "id": "pdm-5",
+        "prompt": "ייבאו pandas כ-pd. צרו df עם first_name=['Ana', None, 'Ben'] ו-pre_movie_score=[8, None, 7]. שמרו ב-missing_name את isnull של first_name כרשימה, וב-has_score את השמות (first_name) של השורות שבהן pre_movie_score.notnull().",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "missing_name",
+            "expected": [
+              false,
+              true,
+              false
+            ]
+          },
+          {
+            "expr": "has_score",
+            "expected": [
+              "Ana",
+              "Ben"
+            ]
+          }
+        ],
+        "hint": "isnull לזיהוי, ו-df[df['col'].notnull()] לסינון.",
+        "explanation": "ל-Ana (8) ול-Ben (7) יש ציון; לשורה האמצעית אין ציון וגם השם חסר.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'first_name': ['Ana', None, 'Ben'], 'pre_movie_score': [8, None, 7]})\nmissing_name = df['first_name'].isnull().tolist()\nhas_score = df[df['pre_movie_score'].notnull()]['first_name'].tolist()",
+        "type": "write"
+      },
+      {
+        "id": "pdm-6",
+        "prompt": "ייבאו pandas כ-pd. צרו df עם first_name=['Ana', 'Dan', 'Ben'] ו-pre_movie_score=[8, None, None]. שמרו ב-names את first_name של השורות שבהן השם קיים (notnull) והציון המקדים חסר (isnull).",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "names",
+            "expected": [
+              "Dan",
+              "Ben"
+            ]
+          }
+        ],
+        "hint": "כמו בסיכום שיעור 21: שני התנאים עם &.",
+        "explanation": "Ana יש לה ציון לכן לא נכנסת; ל-Dan ו-Ben יש שם ואין ציון מקדים.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'first_name': ['Ana', 'Dan', 'Ben'], 'pre_movie_score': [8, None, None]})\nnames = df[(df['first_name'].notnull()) & (df['pre_movie_score'].isnull())]['first_name'].tolist()",
+        "type": "write"
+      },
+      {
+        "id": "pdm-7",
+        "prompt": "תרגיל כיתתי (חלק א): הטבלה כבר מוכנה בתיבת הקוד, ויש בה ערכים חסרים. מחקו כל שורה שיש בה לפחות ערך חסר אחד, ושמרו את התוצאה במשתנה complete כרשימת רשימות.",
+        "starter": "import pandas as pd\ndf = pd.DataFrame({'A': [None, 2, 3, None, 5], 'B': [10, None, None, 40, 50], 'C': [100, None, 300, 400, None]})\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "complete",
+            "expected": []
+          },
+          {
+            "expr": "len(df.dropna())",
+            "expected": 0
+          }
+        ],
+        "hint": "dropna() בלי פרמטרים. בדקו אם נשארת שורה מלאה.",
+        "explanation": "בטבלה מהתרגיל הכיתתי אין אף שורה מלאה, לכן התוצאה ריקה. זו בדיוק הנקודה של המשימה הראשונה.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'A': [None, 2, 3, None, 5], 'B': [10, None, None, 40, 50], 'C': [100, None, 300, 400, None]})\ncomplete = df.dropna().values.tolist()",
+        "type": "write"
+      },
+      {
+        "id": "pdm-8",
+        "prompt": "תרגיל כיתתי (חלק ב): הטבלה כבר מוכנה בתיבת הקוד. שמרו במשתנה kept את מספר השורות שנשארות אחרי שמחיקים רק שורות שבהן כל הערכים חסרים.",
+        "starter": "import pandas as pd\ndf = pd.DataFrame({'A': [None, 2, 3, None, 5], 'B': [10, None, None, 40, 50], 'C': [100, None, 300, 400, None]})\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "kept",
+            "expected": 5
+          }
+        ],
+        "hint": "אין כאן שורה שכולה חסרה, לכן כל 5 השורות נשארות.",
+        "explanation": "how='all' או thresh=1 מוחקים רק שורות בלי אף ערך תקין. בשיעור זה הוסבר גם עם thresh.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'A': [None, 2, 3, None, 5], 'B': [10, None, None, 40, 50], 'C': [100, None, 300, 400, None]})\nkept = len(df.dropna(how='all'))",
+        "type": "write"
+      },
+      {
+        "id": "pdm-9",
+        "prompt": "תרגיל כיתתי (חלק ג): הטבלה כבר מוכנה בתיבת הקוד. מחקו שורות שיש בהן ערך חסר באחת משתי העמודות שב-subset (הראשונה והשלישית). שמרו במשתנה rows את הערכים שנשארו בעמודה הראשונה, כמספרים שלמים.",
+        "starter": "import pandas as pd\ndf = pd.DataFrame({'A': [None, 2, 3, None, 5], 'B': [10, None, None, 40, 50], 'C': [100, None, 300, 400, None]})\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "rows",
+            "expected": [
+              3
+            ]
+          },
+          {
+            "expr": "len(df.dropna(subset=['A', 'C']))",
+            "expected": 1
+          }
+        ],
+        "hint": "dropna(subset=['A', 'C']).",
+        "explanation": "רק השורה עם A=3 ו-C=300 שלמה בשתיהן. B לא נכנס לבדיקה, גם אם הוא חסר.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'A': [None, 2, 3, None, 5], 'B': [10, None, None, 40, 50], 'C': [100, None, 300, 400, None]})\nrows = df.dropna(subset=['A', 'C'])['A'].astype(int).tolist()",
+        "type": "write"
+      },
+      {
+        "id": "pdm-10",
+        "prompt": "תרגיל כיתתי (חלק ד): הטבלה כבר מוכנה בתיבת הקוד. מלאו את כל הערכים החסרים באפס, ושמרו במשתנה filled את הטבלה כרשימת רשימות של מספרים שלמים.",
+        "starter": "import pandas as pd\ndf = pd.DataFrame({'A': [None, 2, 3, None, 5], 'B': [10, None, None, 40, 50], 'C': [100, None, 300, 400, None]})\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "filled",
+            "expected": [
+              [
+                0,
+                10,
+                100
+              ],
+              [
+                2,
+                0,
+                0
+              ],
+              [
+                3,
+                0,
+                300
+              ],
+              [
+                0,
+                40,
+                400
+              ],
+              [
+                5,
+                50,
+                0
+              ]
+            ]
+          }
+        ],
+        "hint": "fillna(0) ואז המרה ל-int כדי לקבל מספרים שלמים.",
+        "explanation": "כל חסר הופך ל-0, וכל השורות נשמרות.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'A': [None, 2, 3, None, 5], 'B': [10, None, None, 40, 50], 'C': [100, None, 300, 400, None]})\nfilled = df.fillna(0).astype(int).values.tolist()",
+        "type": "write"
+      },
+      {
+        "id": "pdm-11",
+        "prompt": "ייבאו pandas כ-pd. צרו df עם B=[10, None, None, 40, 50]. מלאו את החסרים בעמודה B בממוצע של הערכים שאינם חסרים, ושמרו את רשימת הערכים ב-filled_b.",
+        "starter": "import pandas as pd\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "filled_b",
+            "expected": [
+              10.0,
+              33.333333333333336,
+              33.333333333333336,
+              40.0,
+              50.0
+            ]
+          }
+        ],
+        "hint": "df['B'].fillna(df['B'].mean()). הממוצע הוא (10+40+50)/3.",
+        "explanation": "כמו מילוי post_movie_score בממוצע העמודה בשיעור 21.",
+        "solution": "import pandas as pd\ndf = pd.DataFrame({'B': [10, None, None, 40, 50]})\nfilled_b = df['B'].fillna(df['B'].mean()).tolist()",
+        "type": "write"
+      },
+      {
+        "id": "pdm-12",
+        "prompt": "ייבאו numpy כ-np. בדקו את הזהות של np.nan: שמרו ב-same_is את תוצאת (np.nan is np.nan) וב-same_eq את תוצאת (np.nan == np.nan).",
+        "starter": "import numpy as np\n",
+        "packages": [
+          "numpy",
+          "pandas"
+        ],
+        "tests": [
+          {
+            "expr": "same_is",
+            "expected": true
+          },
+          {
+            "expr": "same_eq",
+            "expected": false
+          }
+        ],
+        "hint": "is מול ==, כמו בשקף.",
+        "explanation": "לכן לבדיקת nan בודדים משתמשים ב-is, ובטבלה ב-isnull/isna.",
+        "solution": "import numpy as np\nsame_is = np.nan is np.nan\nsame_eq = np.nan == np.nan",
         "type": "write"
       }
     ]

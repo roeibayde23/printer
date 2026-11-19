@@ -46,7 +46,11 @@
     "numpy-random":  { accent: "#1A2340", soft: "#e6e8ee" },
     "numpy-index":   { accent: "#1A2340", soft: "#e6e8ee" },
     "numpy-ops":     { accent: "#1A2340", soft: "#e6e8ee" },
-    "pandas-series": { accent: "#1A2340", soft: "#e6e8ee" }
+    "pandas-series":     { accent: "#1A2340", soft: "#e6e8ee" },
+    "pandas-dataframe":  { accent: "#1A2340", soft: "#e6e8ee" },
+    "pandas-select":     { accent: "#1A2340", soft: "#e6e8ee" },
+    "pandas-transform":  { accent: "#1A2340", soft: "#e6e8ee" },
+    "pandas-missing":    { accent: "#1A2340", soft: "#e6e8ee" }
   };
 
   const VOCAB_META = {
@@ -81,7 +85,7 @@
       { id: "basics", title: "יסודות", topics: ["datascience"] },
       { id: "env", title: "סביבת עבודה", topics: ["libraries", "jupyter"] },
       { id: "numpy", title: "NumPy", topics: ["numpy-intro", "numpy-random", "numpy-index", "numpy-ops"] },
-      { id: "pandas", title: "Pandas", topics: ["pandas-series"] }
+      { id: "pandas", title: "Pandas", topics: ["pandas-series", "pandas-dataframe", "pandas-select", "pandas-transform", "pandas-missing"] }
     ],
     vocab: [
       { id: "sql-keywords", title: "מילות מפתח וסעיפים ב-SQL", topics: ["sql-keywords"] },

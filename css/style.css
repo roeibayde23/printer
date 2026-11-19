@@ -918,21 +918,37 @@ textarea.code:focus, .fill-row input:focus, .choice:focus-visible, button:focus-
 }
 
 
-.learn-search { margin: 4px 0 12px; }
+.learn-search {
+  position: relative;
+  margin: 2px 0 14px;
+}
+.learn-search .search-icon {
+  position: absolute;
+  inset-inline-start: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--navy);
+  opacity: 0.35;
+  pointer-events: none;
+  display: block;
+}
 .learn-search input {
   width: 100%;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(26, 35, 64, 0.12);
   background: var(--surface);
   color: var(--navy);
   border-radius: 14px;
   padding: 12px 14px;
+  padding-inline-start: 42px;
   font: inherit;
   font-size: 15px;
-  box-shadow: var(--shadow);
+  box-shadow: none;
 }
+.learn-search input::placeholder { color: var(--navy); opacity: 0.38; }
 .learn-search input:focus {
-  outline: 2px solid var(--gold);
+  outline: none;
   border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(232, 184, 74, 0.28);
 }
 
 .search-results { display: grid; gap: 14px; margin-bottom: 16px; }
@@ -1026,6 +1042,79 @@ textarea.code:focus, .fill-row input:focus, .choice:focus-visible, button:focus-
   letter-spacing: 0.02em;
 }
 
+
+/* v10: book-style learn TOC */
+.toc { padding-top: 6px; padding-bottom: 12px; }
+.toc-row {
+  display: grid;
+  grid-template-columns: 2.7em 1fr;
+  column-gap: 14px;
+  align-items: baseline;
+}
+.toc-chapter { margin-top: 16px; }
+.toc-chapter:first-child { margin-top: 4px; }
+.toc-num {
+  font-size: 34px;
+  font-weight: 800;
+  color: var(--gold);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.toc-head h2,
+.toc-chapter-link h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--navy);
+  padding-bottom: 8px;
+  text-align: right;
+}
+.toc-topic,
+.toc-chapter-link {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: right;
+  cursor: pointer;
+}
+.toc-topic {
+  min-height: 42px;
+  align-items: center;
+}
+.toc-topic .idx {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--navy);
+  opacity: 0.42;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.toc-topic .title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--navy);
+  line-height: 1.35;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(26, 35, 64, 0.16);
+  text-align: right;
+}
+.toc-chapter .toc-topic:last-child .title { border-bottom: 0; }
+.toc-chapter-link {
+  min-height: 64px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(26, 35, 64, 0.16);
+}
+.toc-chapter:last-child .toc-chapter-link { border-bottom: 0; }
+.toc-chapter-link h2 { padding-bottom: 0; }
+.toc [dir="ltr"] { direction: ltr; unicode-bidi: isolate; }
+.vocab-term-list { display: grid; gap: 12px; padding-top: 4px; padding-bottom: 16px; }
 
 /* v9: vocabulary track */
 .track-card.vocab .track-icon {

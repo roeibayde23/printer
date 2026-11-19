@@ -1710,6 +1710,14 @@
     "example": "df.head()"
   },
   {
+    "id": "pandas__tail",
+    "chapter": "pandas",
+    "term": "tail",
+    "he": "שורות אחרונות",
+    "explanation": "מחזיר את סוף הטבלה, כברירת מחדל חמש שורות.",
+    "example": "df.tail()"
+  },
+  {
     "id": "pandas__info",
     "chapter": "pandas",
     "term": "info",
@@ -1790,6 +1798,14 @@
     "example": "df['city'].unique()"
   },
   {
+    "id": "pandas__nunique",
+    "chapter": "pandas",
+    "term": "nunique",
+    "he": "מספר ערכים ייחודיים",
+    "explanation": "מחזיר כמה ערכים שונים יש, כמספר.",
+    "example": "df['city'].nunique()"
+  },
+  {
     "id": "pandas__isna",
     "chapter": "pandas",
     "term": "isna",
@@ -1822,12 +1838,148 @@
     "example": "a.add(b, fill_value=0)"
   },
   {
+    "id": "pandas__resetuscoreindex",
+    "chapter": "pandas",
+    "term": "reset_index",
+    "he": "איפוס האינדקס",
+    "explanation": "מחזיר DataFrame שבו האינדקס הישן הופך לעמודה רגילה, ואינדקס חדש רץ מ-0.",
+    "example": "df.reset_index()"
+  },
+  {
     "id": "pandas__sortuscorevalues",
     "chapter": "pandas",
     "term": "sort_values",
     "he": "מיון לפי ערכים",
     "explanation": "מסדר את השורות לפי ערכי עמודה אחת או יותר.",
     "example": "df.sort_values('age')"
+  },
+  {
+    "id": "pandas__setuscoreindex",
+    "chapter": "pandas",
+    "term": "set_index",
+    "he": "קביעת אינדקס מעמודה",
+    "explanation": "הופך עמודה לאינדקס השורות. אחרי הפעולה העמודה כבר לא מופיעה בין עמודות הטבלה.",
+    "example": "df.set_index('id')"
+  },
+  {
+    "id": "pandas__pddotconcat",
+    "chapter": "pandas",
+    "term": "pd.concat",
+    "he": "שרשור טבלאות",
+    "explanation": "מחבר DataFrame-ים זה מתחת לזה (או לצד). אם העמודות לא תואמות, החסר יתמלא ב-NaN. עדיף על append שהוצא משימוש.",
+    "example": "pd.concat([a, b], ignore_index=True)"
+  },
+  {
+    "id": "pandas__between-pandas",
+    "chapter": "pandas",
+    "term": "between (Pandas)",
+    "he": "סינון בטווח",
+    "explanation": "מחזיר True לערכים שנמצאים בין שני גבולות. inclusive='both' כולל את שני הקצוות.",
+    "example": "df[df['age'].between(30, 50, inclusive='both')]"
+  },
+  {
+    "id": "pandas__npdotvectorize",
+    "chapter": "pandas",
+    "term": "np.vectorize",
+    "he": "התאמת פונקציה למערכים",
+    "explanation": "מקבל פונקציית פייתון ומתאים אותה לעבודה על כמה עמודות או מערכים בבת אחת.",
+    "example": "np.vectorize(quality)(df['total_bill'], df['tip'])"
+  },
+  {
+    "id": "pandas__map-pandas",
+    "chapter": "pandas",
+    "term": "map (Pandas)",
+    "he": "החלפה לפי מילון",
+    "explanation": "מחליף ערכים בעמודה לפי מיפוי {ישן: חדש}. תוצאה דומה ל-replace, עם תחביר של מילון.",
+    "example": "df['sex'].map({'Female': 'F', 'Male': 'M'})"
+  },
+  {
+    "id": "pandas__duplicated",
+    "chapter": "pandas",
+    "term": "duplicated",
+    "he": "זיהוי כפילויות",
+    "explanation": "מחזיר True בכל הופעה נוספת של ערך שכבר נראה; ההופעה הראשונה נשארת False.",
+    "example": "df['a'].duplicated()"
+  },
+  {
+    "id": "pandas__dropuscoreduplicates",
+    "chapter": "pandas",
+    "term": "drop_duplicates",
+    "he": "מחיקת כפילויות",
+    "explanation": "מוחק שורות כפולות ומשאיר את ההופעה הראשונה של כל ערך.",
+    "example": "df.drop_duplicates()"
+  },
+  {
+    "id": "pandas__nlargest",
+    "chapter": "pandas",
+    "term": "nlargest",
+    "he": "n הערכים הגדולים",
+    "explanation": "מחזיר את n השורות עם הערכים הגדולים ביותר בעמודה שנבחרה.",
+    "example": "df.nlargest(10, 'tip')"
+  },
+  {
+    "id": "pandas__nsmallest",
+    "chapter": "pandas",
+    "term": "nsmallest",
+    "he": "n הערכים הקטנים",
+    "explanation": "מחזיר את n השורות עם הערכים הקטנים ביותר בעמודה שנבחרה.",
+    "example": "df.nsmallest(5, 'tip')"
+  },
+  {
+    "id": "pandas__sample-pandas",
+    "chapter": "pandas",
+    "term": "sample (Pandas)",
+    "he": "דגימה אקראית",
+    "explanation": "בוחר שורות באקראי: מספר קבוע עם n, או חלק יחסי עם frac (למשל 0.1 ל-10%).",
+    "example": "df.sample(frac=0.1)"
+  },
+  {
+    "id": "pandas__isnull",
+    "chapter": "pandas",
+    "term": "isnull",
+    "he": "בדיקת ערך חסר",
+    "explanation": "מחזיר True במקומות שבהם הערך חסר (NaN). כינוי נפוץ ל-isna.",
+    "example": "df['score'].isnull()"
+  },
+  {
+    "id": "pandas__notnull",
+    "chapter": "pandas",
+    "term": "notnull",
+    "he": "בדיקת ערך קיים",
+    "explanation": "ההפך מ-isnull: True במקומות שיש ערך, False במקומות החסרים.",
+    "example": "df[df['score'].notnull()]"
+  },
+  {
+    "id": "pandas__thresh",
+    "chapter": "pandas",
+    "term": "thresh",
+    "he": "סף ערכים לא-חסרים",
+    "explanation": "ב-dropna, thresh=n משאיר שורה רק אם יש בה לפחות n ערכים שאינם חסרים.",
+    "example": "df.dropna(thresh=1)"
+  },
+  {
+    "id": "pandas__subset-dropna",
+    "chapter": "pandas",
+    "term": "subset (dropna)",
+    "he": "עמודות לבדיקת חסרים",
+    "explanation": "מגביל את dropna לעמודות מסוימות בלבד: נבדק NaN רק בהן.",
+    "example": "df.dropna(subset=['A', 'C'])"
+  },
+  {
+    "id": "pandas__drop-pandas",
+    "chapter": "pandas",
+    "term": "drop (Pandas)",
+    "he": "מחיקת עמודה או שורה",
+    "explanation": "מחזיר טבלה בלי העמודה (axis=1) או השורה (axis=0) שצוינה. עם inplace=True משנים את המקור.",
+    "example": "df.drop('col', axis=1, inplace=True)"
+  },
+  {
+    "id": "pandas__dataframedott",
+    "chapter": "pandas",
+    "term": "DataFrame.T",
+    "he": "תצוגה מוחלפת",
+    "explanation": "מחליף שורות ועמודות. שימושי אחרי describe, כדי ששמות העמודות יופיעו בשורות.",
+    "example": "df.describe().T"
   },
   {
     "id": "general__data-science",

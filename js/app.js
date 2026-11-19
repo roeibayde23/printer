@@ -1,7 +1,7 @@
 /* printer — Hebrew SQL & Python practice game (v2: learn + practice) */
 (function () {
   const STORAGE_KEY = "printer-v2";
-  const APP_VERSION = window.APP_VERSION || "9";
+  const APP_VERSION = window.APP_VERSION || "10";
   const SESSION_SIZE = (window.Quiz && window.Quiz.SESSION_SIZE) || 6;
   const $app = document.getElementById("app");
   const TYPE_LABELS = {
@@ -252,6 +252,15 @@
       .replace(/(\[[0-9,.\s]+\])/g, '<span class="ltr" dir="ltr">$1</span>')
       .replace(/(\(\d+(?:\s*,\s*\d+)+\))/g, '<span class="ltr" dir="ltr">$1</span>')
       .replace(/(\d+\s*[×x]\s*\d+)/g, '<span class="ltr" dir="ltr">$1</span>');
+  }
+
+
+  function titleHtml(s) {
+    const esc = escapeHtml(s);
+    const hasHe = /[\u0590-\u05FF]/.test(s);
+    if (!hasHe) return `<span dir="ltr">${esc}</span>`;
+    return esc.replace(/[A-Za-z][A-Za-z0-9+._/\-]*(?:[ \u00A0]+[A-Za-z][A-Za-z0-9+._/\-]*)*/g,
+      (m) => `<span dir="ltr">${m}</span>`);
   }
 
   function hideToast() {
@@ -612,32 +621,67 @@
     </article>`;
   }
 
+  function chapterBlocks(track) {
+    const list = topics(track);
+    const byId = Object.fromEntries(list.map((t) => [t.id, t]));
+    const chapters = chaptersFor(track);
+    const chs = chapters.length ? chapters.slice() : [{ id: "all", title: "נושאים", topics: list.map((t) => t.id) }];
+    const leftover = list.filter((t) => !chs.some((c) => (c.topics || []).includes(t.id)));
+    if (leftover.length) chs.push({ id: "more", title: "עוד", topics: leftover.map((t) => t.id) });
+    return chs
+      .map((ch) => ({ id: ch.id, title: ch.title, items: (ch.topics || []).map((id) => byId[id]).filter(Boolean) }))
+      .filter((ch) => ch.items.length);
+  }
+
+  function learnTocHtml(track) {
+    const vocab = isVocab(track);
+    const blocks = chapterBlocks(track).map((ch, i) => {
+      const n = i + 1;
+      if (vocab) {
+        const topicId = ch.items[0].id;
+        return `<section class="toc-chapter" data-chapter="${escapeHtml(ch.id)}">
+          <button type="button" class="toc-row toc-chapter-link" data-id="${escapeHtml(topicId)}">
+            <span class="toc-num">${n}</span>
+            <h2>${titleHtml(ch.title)}</h2>
+          </button>
+        </section>`;
+      }
+      const topicsHtml = ch.items.map((t, j) => `
+        <button type="button" class="toc-row toc-topic" data-id="${escapeHtml(t.id)}">
+          <span class="idx">${n}.${j + 1}</span>
+          <span class="title">${titleHtml(t.title)}</span>
+        </button>`).join("");
+      return `<section class="toc-chapter" data-chapter="${escapeHtml(ch.id)}">
+        <div class="toc-row toc-head">
+          <span class="toc-num">${n}</span>
+          <h2>${titleHtml(ch.title)}</h2>
+        </div>
+        ${topicsHtml}
+      </section>`;
+    });
+    return `<div class="toc">${blocks.join("")}</div>`;
+  }
+
   function chaptersHtml(track, mode) {
     const list = topics(track);
     if (isVocab(track) && mode === "practice") {
       return list.map((t) => topicNodeHtml(track, mode, t)).join("");
     }
-    const byId = Object.fromEntries(list.map((t) => [t.id, t]));
-    const chapters = chaptersFor(track);
-    const used = new Set();
     const blocks = [];
-    const chs = chapters.length ? chapters.slice() : [{ id: "all", title: "נושאים", topics: list.map((t) => t.id) }];
-    const leftover = list.filter((t) => !chs.some((c) => (c.topics || []).includes(t.id)));
-    if (leftover.length) chs.push({ id: "more", title: "עוד", topics: leftover.map((t) => t.id) });
-    chs.forEach((ch, idx) => {
-      const items = (ch.topics || []).map((id) => byId[id]).filter(Boolean);
-      if (!items.length) return;
-      items.forEach((it) => used.add(it.id));
+    chapterBlocks(track).forEach((ch, idx) => {
       const open = isChapterOpen(track, ch.id, idx === 0);
+      const countN = isVocab(track) && mode === "learn"
+        ? (ch.items[0] && ch.items[0].entries ? ch.items[0].entries.length : 0)
+        : ch.items.length;
       blocks.push(`<section class="chapter${open ? " open" : ""}" data-chapter="${escapeHtml(ch.id)}">
         <button type="button" class="chapter-toggle" aria-expanded="${open ? "true" : "false"}">
           <span class="chapter-title">${escapeHtml(ch.title)}</span>
-          <span class="chapter-count">${chapterCountLabel(track, mode, isVocab(track) && mode === "learn" ? (items[0] && items[0].entries ? items[0].entries.length : 0) : items.length)}</span>
+          <span class="chapter-count">${chapterCountLabel(track, mode, countN)}</span>
           <span class="chapter-chevron" aria-hidden="true">▾</span>
         </button>
         <div class="chapter-body">${isVocab(track) && mode === "learn"
-          ? (items[0] && items[0].entries ? items[0].entries.map(vocabEntryHtml).join("") : "")
-          : items.map((t) => topicNodeHtml(track, mode, t)).join("")}</div>
+          ? (ch.items[0] && ch.items[0].entries ? ch.items[0].entries.map(vocabEntryHtml).join("") : "")
+          : ch.items.map((t) => topicNodeHtml(track, mode, t)).join("")}</div>
       </section>`);
     });
     return blocks.join("");
@@ -649,6 +693,12 @@
         if (mode === "learn") location.hash = `#learn/${track}/${btn.dataset.id}`;
         else startLevel(track, btn.dataset.id);
       };
+    });
+  }
+
+  function bindLearnToc(track) {
+    $app.querySelectorAll(".toc-topic, .toc-chapter-link").forEach((btn) => {
+      btn.onclick = () => { location.hash = `#learn/${track}/${btn.dataset.id}`; };
     });
   }
 
@@ -691,12 +741,12 @@
         const snip = snippetAround(h.row.snippet || h.row.hay, query);
         const label = h.row.kind === "topic" ? h.topic.title : (h.topic.title + " · " + h.row.title);
         const entryAttr = h.row.entryId ? ` data-entry="${escapeHtml(h.row.entryId)}"` : "";
-        const titleHtml = h.row.term
+        const hitTitle = h.row.term
           ? `<span class="mono ltr" dir="ltr">${escapeHtml(h.row.term)}</span> ${escapeHtml(h.row.he || "")}`
-          : escapeHtml(label);
+          : titleHtml(label);
         return `<button type="button" class="search-hit" data-id="${h.topic.id}" data-idx="${h.row.idx}"${entryAttr}>
-          <b>${titleHtml}</b>
-          ${snip ? `<small>${hebText(snip)}</small>` : ""}
+          <b>${hitTitle}</b>
+          ${snip ? `<small>${titleHtml(snip)}</small>` : ""}
         </button>`;
       }).join("");
       return `<section class="search-group"><h4>${escapeHtml(g.chapter.title)}</h4>${hits}</section>`;
@@ -705,15 +755,16 @@
       btn.onclick = () => {
         if (isVocab(track)) {
           const entryId = btn.dataset.entry;
+          const topicId = btn.dataset.id;
           learnSearchQuery[track] = "";
           const input = document.getElementById("learn-search");
           if (input) input.value = "";
-          pendingLearnJump = { track, topicId: btn.dataset.id, entryId, query };
-          if ((location.hash || "").replace(/^#/, "") === track + "/learn") {
-            renderMap(track, "learn");
-            jumpToVocabEntry(track, btn.dataset.id, entryId);
+          pendingLearnJump = { track, topicId, entryId, query };
+          const dest = "learn/" + track + "/" + topicId;
+          if ((location.hash || "").replace(/^#/, "") === dest) {
+            renderVocabChapter(track, topicId);
           } else {
-            location.hash = "#" + track + "/learn";
+            location.hash = "#" + dest;
           }
           return;
         }
@@ -773,15 +824,6 @@
 
   function jumpToVocabEntry(track, chapterId, entryId) {
     if (!isVocab(track)) return;
-    if (chapterId) {
-      const sec = $app.querySelector('.chapter[data-chapter="' + CSS.escape(chapterId) + '"]');
-      if (sec) {
-        sec.classList.add("open");
-        const tog = sec.querySelector(".chapter-toggle");
-        if (tog) tog.setAttribute("aria-expanded", "true");
-        saveChapterOpen(track, chapterId, true);
-      }
-    }
     const el = entryId ? document.getElementById("vocab-" + entryId) : null;
     if (el) {
       el.classList.add("search-hit");
@@ -800,29 +842,63 @@
         : "בחרו נושא ללמידה. כל פריט מוסבר עם דוגמה. הלמידה לא פותחת תרגול אוטומטית.")
       : `בחרו נושא לתרגול. בכל סבב מופיעות עד ${SESSION_SIZE} שאלות אקראיות מתוך מאגר הנושא. ${prog.done} מתוך ${prog.total} נושאים כבר תורגלו · ${prog.stars} כוכבים.`;
     const title = (mode === "learn" ? "למידת " : "תרגול ") + trackLabel(track);
-    const searchVal = escapeHtml(learnSearchQuery[track] || "");
-    const searchBar = mode === "learn" ? `
-        <div class="learn-search">
-          <label class="sr-only" for="learn-search">חיפוש בחומר הלמידה</label>
-          <input id="learn-search" type="search" dir="rtl" placeholder="${isVocab(track) ? "חיפוש מונח באנגלית או בעברית…" : "חיפוש בנושאים, הסברים ודוגמאות…"}" value="${searchVal}" autocomplete="off" />
-        </div>
-        <div id="learn-search-results" class="search-results" hidden></div>` : "";
+    const searchBar = mode === "learn" ? searchBarHtml(track) : "";
+    const introHtml = mode === "learn" ? "" : `<p class="map-intro">${intro}</p>`;
+    const mapClass = mode === "learn" ? "toc-map" : ("level-list colorful " + (pyish ? "py" : ""));
+    const mapBody = mode === "learn" ? learnTocHtml(track) : chaptersHtml(track, mode);
     $app.innerHTML = `
       ${topbar({ title, back: true })}
       <div class="screen">
         ${modeTabs(track, mode)}
         ${searchBar}
-        <p class="map-intro">${intro}</p>
-        <div id="topic-map" class="level-list colorful ${pyish ? "py" : ""}">
-          ${chaptersHtml(track, mode)}
+        ${introHtml}
+        <div id="topic-map" class="${mapClass}">
+          ${mapBody}
         </div>
       </div>`;
     bindChrome("#home");
     bindModeTabs(track);
-    bindTopicNodes(track, mode);
-    bindChapters(track);
-    if (mode === "learn") bindLearnSearch(track);
-    if (isVocab(track) && mode === "learn" && pendingLearnJump && pendingLearnJump.track === track) {
+    if (mode === "learn") {
+      bindLearnToc(track);
+      bindLearnSearch(track);
+    } else {
+      bindTopicNodes(track, mode);
+      bindChapters(track);
+    }
+  }
+
+  const SEARCH_ICON = `<svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>`;
+
+  function searchBarHtml(track) {
+    const searchVal = escapeHtml(learnSearchQuery[track] || "");
+    const ph = isVocab(track) ? "חיפוש מונח באנגלית או בעברית…" : "חיפוש בנושאים, הסברים ודוגמאות…";
+    return `
+        <div class="learn-search">
+          <label class="sr-only" for="learn-search">חיפוש בחומר הלמידה</label>
+          ${SEARCH_ICON}
+          <input id="learn-search" type="search" dir="rtl" placeholder="${ph}" value="${searchVal}" autocomplete="off" />
+        </div>
+        <div id="learn-search-results" class="search-results" hidden></div>`;
+  }
+
+  function renderVocabChapter(track, topicId) {
+    hideToast();
+    const topic = findTopic(track, topicId);
+    if (!topic || !isVocab(track)) return (location.hash = "#vocab/learn");
+    const entries = topic.entries || [];
+    $app.innerHTML = `
+      ${topbar({ title: topic.title, back: true })}
+      <div class="screen">
+        ${modeTabs(track, "learn")}
+        ${searchBarHtml(track)}
+        <div id="topic-map" class="vocab-term-list">
+          ${entries.map(vocabEntryHtml).join("")}
+        </div>
+      </div>`;
+    bindChrome("#vocab/learn");
+    bindModeTabs(track);
+    bindLearnSearch(track);
+    if (pendingLearnJump && pendingLearnJump.track === track) {
       const jump = pendingLearnJump;
       pendingLearnJump = null;
       jumpToVocabEntry(track, jump.topicId, jump.entryId);
@@ -1388,10 +1464,7 @@
     if (parts[0] === "sheet") return renderMap(parseTrack(parts[1]), "learn");
     if (parts[0] === "learn" && parts[1] && parts[2]) {
       const track = parseTrack(parts[1]);
-      if (track === "vocab") {
-        pendingLearnJump = pendingLearnJump || { track, topicId: parts[2] };
-        return renderMap("vocab", "learn");
-      }
+      if (track === "vocab") return renderVocabChapter(track, parts[2]);
       return renderLesson(track, parts[2]);
     }
     if (parts[0] === "play" && parts[1] && parts[2]) {

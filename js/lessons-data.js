@@ -1,4 +1,4 @@
-/* Hebrew Data Science lessons (Jupyter, NumPy, Pandas) for learn mode. */
+/* Data-track lesson copy. Used by the Learn tab. */
 (function (root) {
   const DATA_LESSONS =
 {
@@ -303,6 +303,210 @@
         "code": "import pandas as pd\n\na = pd.Series({'a': 1, 'b': 2, 'c': 3})\nb = pd.Series({'b': 10, 'c': 20, 'd': 30})\nprint(a.add(b, fill_value=0).astype(int).to_dict())",
         "run": false,
         "sample": "{'a': 1, 'b': 12, 'c': 23, 'd': 30}"
+      }
+    ]
+  },
+  "pandas-dataframe": {
+    "intro": "DataFrame הוא מבנה דו-ממדי עם שורות ועמודות מתויגות — כמו טבלה באקסל או ב-SQL. כל עמודה היא Series שחולקת אינדקס משותף. כאן ניצור טבלאות, נטען CSV, ונכיר את השיטות הבסיסיות לבדיקה.",
+    "items": [
+      {
+        "term": "DataFrame",
+        "title": "מהו DataFrame?",
+        "text": "עד עכשיו עבדנו עם Series — מבנה חד-ממדי שמקשר תווית לערך אחד. בנתונים אמיתיים יש כמה מאפיינים לכל רשומה, כמו טבלה. DataFrame הוא מבנה דו-ממדי, ניתן לשינוי בגודל, עם צירים מתויגים (שורות ועמודות). הוא מתאים לניקוי, המרה, סטטיסטיקה והכנה ללמידת מכונה, ויכול להחזיק טיפוסים שונים: מספרים, מחרוזות, רשימות ומילונים. בפנים כל עמודה היא Series. לכן DataFrame הוא אוסף של Series עם אינדקס משותף.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame([[1, 2], [3, 4]], columns=['A', 'B'])\nprint(list(df.columns))\nprint(df['A'].tolist())\nprint(type(df['A']).__name__)",
+        "run": false,
+        "sample": "['A', 'B']\n[1, 3]\nSeries"
+      },
+      {
+        "term": "pd.DataFrame",
+        "title": "יצירה ממטריצה, עם index ו-columns",
+        "text": "pd.DataFrame(מקור) בונה טבלה מהמקור שמוסרים. אם מעבירים מטריצה (רשימת רשימות), מתקבלים אינדקסים מספריים כברירת מחדל גם לשורות וגם לעמודות. אפשר להוסיף תוויות משלכם: index= לשורות ו-columns= לעמודות. סדר הרשימה קובע את סדר התוויות. כמו ב-Series, תוויות מותאמות לא מחליפות את האינדקס המספרי — הן שכבה נוספת, ואפשר לגשת גם לפי מיקום וגם לפי תווית.",
+        "code": "import pandas as pd\n\ndata = [[1, 2], [3, 4]]\ndf = pd.DataFrame(data, columns=['A', 'B'], index=['row1', 'row2'])\nprint(df.values.tolist())\nprint(list(df.index))\nprint(list(df.columns))",
+        "run": false,
+        "sample": "[[1, 2], [3, 4]]\n['row1', 'row2']\n['A', 'B']"
+      },
+      {
+        "term": "read_csv",
+        "title": "טעינת קובץ CSV",
+        "text": "בגלל המבנה הטבלאי, DataFrame יכול לייצג טבלת SQL או קובץ CSV. pd.read_csv(נתיב) טוען קובץ מהמחשב לטבלה: מעבירים את הנתיב המלא של הקובץ. ב-Mac: לוחצים ימין על הקובץ ב-Finder, מחזיקים Option ובוחרים Copy as path name. ב-Windows: מחזיקים Shift, לוחצים ימין, ובוחרים Copy as path. במחברת או כאן אפשר גם לקרוא מתוך מחרוזת עם io.StringIO לצורך תרגול.",
+        "code": "import pandas as pd\nimport io\n\ncsv = 'name,age\\nDana,20\\nRoei,30'\ndf = pd.read_csv(io.StringIO(csv))\nprint(list(df.columns))\nprint(df['age'].tolist())",
+        "run": false,
+        "sample": "['name', 'age']\n[20, 30]"
+      },
+      {
+        "term": "head / tail / columns / index",
+        "title": "צפייה ראשונית בטבלה",
+        "text": "df.columns מחזיר את שמות העמודות, ו-df.index את אינדקס השורות. df.head(n) מחזיר את n השורות הראשונות (למשל head(2) — שתיים ראשונות), ו-df.tail(n) את n האחרונות.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'a': [10, 20, 30, 40], 'b': [1, 2, 3, 4]})\nprint(list(df.columns))\nprint(df.head(2)['a'].tolist())\nprint(df.tail(1)['a'].tolist())",
+        "run": false,
+        "sample": "['a', 'b']\n[10, 20]\n[40]"
+      },
+      {
+        "term": "info / describe",
+        "title": "מידע כללי וסטטיסטיקות",
+        "text": "df.info() מציג מידע כללי: תווית וסוג של כל עמודה, וכמות הזיכרון שהטבלה תופסת. df.describe() מחזיר סטטיסטיקה על עמודות מספריות: ממוצע, סטיית תקן, מינימום, מקסימום ועוד. df.describe().transpose() או בקצרה df.describe().T הופך את התצוגה: שמות העמודות עוברים לשורות, והמדדים הסטטיסטיים לעמודות — נוח כשיש הרבה עמודות.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'a': [10, 20, 30], 'b': [2, 4, 6]})\nprint(df.describe().loc['mean', 'a'])\nprint(list(df.describe().T.index))",
+        "run": false,
+        "sample": "20.0\n['a', 'b']"
+      }
+    ]
+  },
+  "pandas-select": {
+    "intro": "אחרי שיש DataFrame, בוחרים עמודות, מוסיפים או מוחקים אותן, קובעים אינדקס, וניגשים לפי מיקום (iloc) או תווית (loc). אחר כך מסננים שורות לפי תנאים — כמו בשאילתת SQL, אבל עם תחביר של Pandas.",
+    "items": [
+      {
+        "term": "בחירת עמודות",
+        "title": "בחירה, יצירה ועדכון של עמודות",
+        "text": "df['שם'] מחזיר עמודה אחת (Series). כמה עמודות בוחרים עם רשימה: df[['col1', 'col2']]. אם שני העמודות מאותו טיפוס אפשר לחבר אותן ב-+. כדי ליצור עמודה חדשה או לעדכן קיימת, כותבים בצד שמאל שם בסוגריים מרובעים: df['new_col'] = df['col1'] + df['col2'].",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'a': [1, 2], 'b': [10, 20]})\nprint(df['a'].tolist())\nprint(df[['a', 'b']].values.tolist())\ndf['sum'] = df['a'] + df['b']\nprint(df['sum'].tolist())",
+        "run": false,
+        "sample": "[1, 2]\n[[1, 10], [2, 20]]\n[11, 22]"
+      },
+      {
+        "term": "drop",
+        "title": "מחיקת עמודה או שורה",
+        "text": "df.drop(...) מסיר עמודה או שורה ומחזיר DataFrame חדש — המקור לא משתנה, אלא אם מעבירים inplace=True, או דורסים את המשתנה בתוצאה. הציר axis קובע מה מוחקים: axis=0 (ברירת המחדל) מוחק שורה לפי האינדקס, ו-axis=1 מוחק עמודה לפי שמה. לדוגמה: df.drop('col1', axis=1) מוחק עמודה, ו-df.drop(3, axis=0) מוחק את השורה באינדקס 3.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'a': [1, 2, 3], 'b': [10, 20, 30]})\nout = df.drop('b', axis=1)\nprint(list(out.columns))\ndf.drop(0, axis=0, inplace=True)\nprint(df['a'].tolist())",
+        "run": false,
+        "sample": "['a']\n[2, 3]"
+      },
+      {
+        "term": "set_index / reset_index",
+        "title": "קביעת אינדקס והחזרתו לעמודה",
+        "text": "df.set_index('עמודה') הופך עמודה לאינדקס השורות. אחרי כן העמודה הזו כבר לא מופיעה בין עמודות הטבלה. df.reset_index() מחזיר את האינדקס להיות עמודה רגילה, ומציב אינדקס מספרי חדש. בשניהם אפשר inplace=True כדי לשנות את הטבלה המקורית.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'id': ['p1', 'p2'], 'n': [10, 20]})\ndf = df.set_index('id')\nprint(list(df.index))\nprint(list(df.columns))\ndf = df.reset_index()\nprint(list(df.columns))",
+        "run": false,
+        "sample": "['p1', 'p2']\n['n']\n['id', 'n']"
+      },
+      {
+        "term": "iloc / loc",
+        "title": "גישה לפי מיקום ולפי תווית",
+        "text": "df.iloc[] ניגש לפי מיקום מספרי: df.iloc[0] היא השורה הראשונה, ו-df.iloc[0:4] הוא טווח כמו בפייתון (עד 4, בלי 4). df.loc[] ניגש לפי תווית האינדקס: שורה אחת, או כמה תוויות ברשימה, למשל df.loc[['row1', 'row2']].",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'n': [10, 20, 30, 40]}, index=['a', 'b', 'c', 'd'])\nprint(int(df.iloc[0]['n']))\nprint(df.iloc[1:3]['n'].tolist())\nprint(df.loc[['a', 'c']]['n'].tolist())",
+        "run": false,
+        "sample": "10\n[20, 30]\n[10, 30]"
+      },
+      {
+        "term": "concat",
+        "title": "שרשור טבלאות",
+        "text": "pd.concat([df1, df2]) מחבר שני DataFrame-ים. אם שמות העמודות או מספרן לא תואמים, Pandas ישלים את החסר ב-NaN. פעם היה גם df.append() להוספת שורה, אבל השיטה הזו הוצאה משימוש ולא מומלץ להשתמש בה — עדיף concat.",
+        "code": "import pandas as pd\n\na = pd.DataFrame({'x': [1, 2]})\nb = pd.DataFrame({'x': [3]})\nout = pd.concat([a, b], ignore_index=True)\nprint(out['x'].tolist())",
+        "run": false,
+        "sample": "[1, 2, 3]"
+      },
+      {
+        "term": "סינון לפי תנאים",
+        "title": "מסכה בוליאנית, אופרטורים ו-between",
+        "text": "תנאי כמו df['population'] > 50 מחזיר Series של True/False. כדי לקבל את השורות שעומדות בתנאי, מעבירים את המסכה לסוגריים: df[df['population'] > 50]. כמה תנאים מחברים עם אופרטורים של Pandas (לא and/or/not של פייתון): & ל-AND, | ל-OR, ו-~ ל-NOT. חובה סוגריים סביב כל תנאי. Series.between(a, b) מסנן ערכים בטווח. inclusive='both' כולל את שני הקצוות (למשל חשבונות בין 10 ל-20 כולל 20).",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({\n    'country': ['USA', 'Canada', 'Italy'],\n    'population': [80, 40, 60],\n    'year': [1776, 1867, 1861],\n})\nprint(df[df['population'] > 50]['country'].tolist())\nprint(df[(df['population'] > 50) & ((df['country'] == 'USA') | (df['country'] == 'Canada'))]['country'].tolist())\nprint(df[~(df['year'] == 1776)]['country'].tolist())",
+        "run": false,
+        "sample": "['USA', 'Italy']\n['USA']\n['Canada', 'Italy']"
+      }
+    ]
+  },
+  "pandas-transform": {
+    "intro": "כשפונקציות מובנות לא מספיקות, מעבירים פונקציה משלכם עם apply (עמודה אחת) או np.vectorize (כמה עמודות). אחר כך ממיינים, סופרים ערכים, מחליפים, מזהים כפילויות, ודולים את השורות הגדולות או הקטנות ביותר.",
+    "items": [
+      {
+        "term": "apply",
+        "title": "פונקציה מותאמת על עמודה",
+        "text": "לפעמים אין ב-Pandas פונקציה מוכנה למה שצריך. אז כותבים פונקציית פייתון ומפעילים אותה על כל ערך בעמודה עם apply. דוגמה מהקורס: לחלץ ארבע הספרות האחרונות של מספר כרטיס. ממירים למחרוזת וחותכים ב-[-4:]: def last_four(num): return str(num)[-4:] ואז df['last_four'] = df['CC Number'].apply(last_four).",
+        "code": "import pandas as pd\n\ndef last_four(num):\n    return str(num)[-4:]\n\ndf = pd.DataFrame({'CC Number': [3560325168603410, 1234567890123456]})\ndf['last_four'] = df['CC Number'].apply(last_four)\nprint(df['last_four'].tolist())",
+        "run": false,
+        "sample": "['3410', '3456']"
+      },
+      {
+        "term": "np.vectorize",
+        "title": "פונקציה על כמה עמודות יחד",
+        "text": "כשהפונקציה צריכה כמה עמודות בבת אחת, משתמשים ב-np.vectorize: היא מקבלת פונקציית פייתון ומתאימה אותה לעבודה עם מערכים. דוגמה מהקורס: quality(total_bill, tip) מחזירה 'Generous' אם tip/total_bill > 0.25, אחרת 'Not Generous'. אחרי כן: df['quality'] = np.vectorize(quality)(df['total_bill'], df['tip']). בסיכום השיעור מופיעה גם דוגמה לחישוב אחוז טיפ עם round.",
+        "code": "import numpy as np\nimport pandas as pd\n\ndef quality(total_bill, tip):\n    if tip / total_bill > 0.25:\n        return 'Generous'\n    return 'Not Generous'\n\ndf = pd.DataFrame({'total_bill': [20, 10], 'tip': [3, 3]})\ndf['quality'] = np.vectorize(quality)(df['total_bill'], df['tip'])\nprint(df['quality'].tolist())",
+        "run": false,
+        "sample": "['Not Generous', 'Generous']"
+      },
+      {
+        "term": "sort_values",
+        "title": "מיון שורות",
+        "text": "df.sort_values(...) ממיין שורות לפי ערכי עמודה. ascending=True (ברירת המחדל) מהקטן לגדול, ו-False מהגדול לקטן. אפשר למסור רשימת עמודות: המיון הראשון לפי העמודה הראשונה, ואז לפי השנייה, וכן הלאה.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'name': ['A', 'B', 'C'], 'tip': [5, 1, 5], 'n': [2, 9, 1]})\nprint(df.sort_values(['tip', 'n'], ascending=False)['name'].tolist())",
+        "run": false,
+        "sample": "['A', 'C', 'B']"
+      },
+      {
+        "term": "value_counts / unique / nunique",
+        "title": "ספירה וערכים ייחודיים",
+        "text": "value_counts() מחזיר כמה פעמים מופיע כל ערך בעמודה (למשל כמה Male/Female). unique() מחזיר את הערכים הייחודיים בלי כפילויות, ו-nunique() את מספרם. אפשר גם לשלב: למשל value_counts על כמה עמודות יחד כדי לראות שכיחות לפי מין ולפי רמת 'נדיבות'.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'sex': ['Male', 'Female', 'Male', 'Male']})\nprint(df['sex'].value_counts().to_dict())\nprint(sorted(df['sex'].unique().tolist()))\nprint(int(df['sex'].nunique()))",
+        "run": false,
+        "sample": "{'Male': 3, 'Female': 1}\n['Female', 'Male']\n2"
+      },
+      {
+        "term": "replace / map",
+        "title": "החלפת ערכים",
+        "text": "replace מחליף ערכים לפי רשימות: הסדר ברשימת הישן מתאים לסדר ברשימת החדש, למשל החלפת Female/Male ב-F/M. map עושה החלפה דומה, אבל עם מילון {ישן: חדש} — לפעמים קריא יותר.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'sex': ['Female', 'Male', 'Female']})\nprint(df['sex'].replace(['Female', 'Male'], ['F', 'M']).tolist())\nprint(df['sex'].map({'Female': 'F', 'Male': 'M'}).tolist())",
+        "run": false,
+        "sample": "['F', 'M', 'F']\n['F', 'M', 'F']"
+      },
+      {
+        "term": "duplicated / drop_duplicates",
+        "title": "כפילויות",
+        "text": "duplicated() מחזיר Series בוליאני: להופעה הראשונה של ערך יתקבל False, ולכל הופעה נוספת True. drop_duplicates() מוחק מהטבלה את השורות הכפולות ומשאיר את ההופעה הראשונה.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'a': [1, 2, 1, 1]})\nprint(df['a'].duplicated().tolist())\nprint(df.drop_duplicates()['a'].tolist())",
+        "run": false,
+        "sample": "[False, False, True, True]\n[1, 2]"
+      },
+      {
+        "term": "nlargest / nsmallest / sample",
+        "title": "הערכים הגדולים והקטנים, ודגימה",
+        "text": "nlargest(n, 'col') מחזיר n השורות עם הערכים הגדולים ביותר בעמודה, ו-nsmallest את הקטנים ביותר. sample(n) מחזיר n שורות אקראיות, ו-sample(frac=0.1) כ-10% מהשורות באקראי. בדגימה אקראית כדאי לקבע random_state אם רוצים תוצאה חוזרת.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'name': ['A', 'B', 'C', 'D'], 'tip': [1, 9, 3, 7]})\nprint(df.nlargest(2, 'tip')['name'].tolist())\nprint(df.nsmallest(1, 'tip')['name'].tolist())",
+        "run": false,
+        "sample": "['B', 'D']\n['A']"
+      }
+    ]
+  },
+  "pandas-missing": {
+    "intro": "ערכים חסרים הם בעיה נפוצה במדעי הנתונים. לפני שמטפלים מחליטים: להשאיר NaN, למחוק, או למלא. אחר כך מזהים חסרים ב-Pandas עם isnull/notnull, ומשתמשים ב-dropna ו-fillna.",
+    "items": [
+      {
+        "term": "אסטרטגיות",
+        "title": "להשאיר, למחוק או למלא — יתרונות וחסרונות",
+        "text": "יש שלוש דרכים עיקריות. להשאיר NaN: קל, והנתונים נשארים מקוריים ומציאותיים; אבל ספריות רבות לא תומכות ב-NaN, ולפעמים NaN מתפרש בטעות כ-0. למחוק: קל, ואפשר למחוק לפי כללים; אבל מוחקים גם ערכים טובים באותה שורה (אובדן מידע), והאלגוריתם עלול לא לפגוש סוגים מסוימים של נתונים. למלא: שומרים את כל השורות ואפשר להשתמש בכל הכלים; אבל קשה לבחור ערך נכון, וערך שגוי עלול לפגוע באיכות המודל.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'score': [10, None, 30]})\nprint(df['score'].isna().tolist())\nprint(df['score'].fillna(0).tolist())",
+        "run": false,
+        "sample": "[False, True, False]\n[10.0, 0.0, 30.0]"
+      },
+      {
+        "term": "שורות מול עמודות",
+        "title": "מה למחוק, ומתי",
+        "text": "אם מחליטים למחוק: הגיוני למחוק שורה כשרוב הערכים בה חסרים, ולמחוק עמודה שלמה כשברוב השורות היא ריקה. מומלץ לחשב קודם איזה אחוז מהנתונים יימחק. אם האחוז גבוה, עדיף לנסות לאסוף נתונים מחדש במקום למחוק מהמקור הקיים.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'A': [1, None, 3], 'B': [None, None, 2]})\nmiss = df.isna().mean() * 100\nprint({k: round(v) for k, v in miss.to_dict().items()})",
+        "run": false,
+        "sample": "{'A': 33, 'B': 67}"
+      },
+      {
+        "term": "isnull / notnull",
+        "title": "זיהוי ערכים חסרים",
+        "text": "ב-Pandas ערך חסר מיוצג כ-np.nan. לבדיקה אם ערך בודד הוא nan משתמשים ב-is ולא ב-==, כי np.nan == np.nan הוא False. מעשית בטבלה: isnull() (או isna()) מחזיר True במקומות החסרים, ו-notnull() את ההפך. כך אפשר לקחת למשל רק שורות שיש בהן ערך ב-pre_movie_score: df[df['pre_movie_score'].notnull()]. וגם תנאי משולב: שם פרטי קיים אבל ציון מקדים חסר: df[(df['first_name'].notnull()) & (df['pre_movie_score'].isnull())].",
+        "code": "import numpy as np\nimport pandas as pd\n\nprint(np.nan is np.nan)\nprint(np.nan == np.nan)\ndf = pd.DataFrame({'first_name': ['Ana', None, 'Ben'], 'pre_movie_score': [8, None, 7]})\nprint(df['first_name'].isnull().tolist())\nprint(df[df['pre_movie_score'].notnull()]['first_name'].tolist())",
+        "run": false,
+        "sample": "True\nFalse\n[False, True, False]\n['Ana', 'Ben']"
+      },
+      {
+        "term": "dropna",
+        "title": "מחיקת שורות או עמודות עם חסרים",
+        "text": "dropna() מוחק שורות שיש בהן לפחות ערך חסר אחד (נשארות רק שורות מלאות). thresh=n משאיר שורה רק אם יש בה לפחות n ערכים שאינם חסרים (thresh=1 מוחק רק שורות שכל ערכיהן חסרים). axis=0 (ברירת מחדל) מוחק שורות, ו-axis=1 מוחק עמודות. subset=['col1', 'col2'] מיישם את הבדיקה רק על העמודות האלה. זהירות: אם משלבים subset של עמודה אחת עם thresh גדול מ-1, לא תישאר אף שורה.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'A': [None, 2, 3], 'B': [10, None, 30], 'C': [100, 200, 300]})\nprint(df.dropna().values.tolist())\nprint(df.dropna(subset=['A', 'B']).values.tolist())",
+        "run": false,
+        "sample": "[[3.0, 30.0, 300.0]]\n[[3.0, 30.0, 300.0]]"
+      },
+      {
+        "term": "fillna",
+        "title": "מילוי ערכים חסרים",
+        "text": "fillna(ערך) מחליף את כל החסרים (בטבלה או בעמודה) בערך שמסרתם, למשל 0. אפשר גם למלא בחישוב, למשל ממוצע העמודה: df['post_movie_score'] = df['post_movie_score'].fillna(df['post_movie_score'].mean()). כך נשמרות כל השורות ואין NaN בעמודה.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'B': [10, None, None, 40, 50]})\nprint(df['B'].fillna(0).tolist())\nprint(df['B'].fillna(df['B'].mean()).tolist())",
+        "run": false,
+        "sample": "[10.0, 0.0, 0.0, 40.0, 50.0]\n[10.0, 33.333333333333336, 33.333333333333336, 40.0, 50.0]"
       }
     ]
   }
