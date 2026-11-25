@@ -676,6 +676,46 @@ textarea.code:focus, .fill-row input:focus, .choice:focus-visible, button:focus-
   font-size: 14px;
   line-height: 1.6;
 }
+.lesson-table-wrap {
+  margin: 0 0 12px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+.lesson-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+.lesson-table th,
+.lesson-table td {
+  padding: 6px 10px;
+  text-align: right;
+  vertical-align: middle;
+  border-top: 1px solid var(--line);
+}
+.lesson-table thead th {
+  border-top: 0;
+  background: var(--gold-soft);
+  color: var(--navy);
+  font-weight: 800;
+  font-size: 11.5px;
+}
+.lesson-table tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--surface) 70%, var(--surface-2));
+}
+.lesson-table td[dir="ltr"] {
+  text-align: left;
+  unicode-bidi: isolate;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-weight: 600;
+  color: var(--navy);
+  white-space: nowrap;
+}
+.lesson-table td .mono { font-size: 12.5px; }
+
 .lesson-sample { margin-top: 4px; }
 .sample-label {
   font-size: 11px;
@@ -803,6 +843,45 @@ textarea.code:focus, .fill-row input:focus, .choice:focus-visible, button:focus-
 }
 .srow-iconbtn svg { width: 18px; height: 18px; }
 .srow-iconbtn:active { background: var(--gold-soft); }
+
+.srow-stack { align-items: flex-start; }
+.srow-stack .srow-text > small { white-space: normal; }
+.srow-text [dir="ltr"] { unicode-bidi: isolate; }
+.srow-df .srow-input {
+  width: 100%;
+  margin-top: 8px;
+}
+.srow-input {
+  flex: none;
+  width: 132px;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--navy);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 13.5px;
+  font-weight: 600;
+  direction: ltr;
+  text-align: left;
+}
+.srow-input:focus {
+  outline: 2px solid var(--gold-soft);
+  border-color: var(--navy);
+}
+.srow-input.invalid {
+  border-color: var(--bad);
+  background: var(--bad-bg);
+}
+.srow-error {
+  margin: 0;
+  padding: 0 14px 10px;
+  font-size: 12.5px;
+  color: var(--bad);
+  text-align: right;
+}
+
 
 .printer-sheet {
   position: fixed;

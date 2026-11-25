@@ -1,7 +1,7 @@
 /* printer — Hebrew SQL & Python practice game (v2: learn + practice) */
 (function () {
   const STORAGE_KEY = "printer-v2";
-  const APP_VERSION = window.APP_VERSION || "10";
+  const APP_VERSION = window.APP_VERSION || "12";
   const SESSION_SIZE = (window.Quiz && window.Quiz.SESSION_SIZE) || 6;
   const $app = document.getElementById("app");
   const TYPE_LABELS = {
@@ -35,14 +35,16 @@
   }
 
   function defaultState() {
-    return { xp: 0, streak: 0, lastPlay: null, levels: {} };
+    return { xp: 0, streak: 0, lastPlay: null, levels: {}, dfName: "df" };
   }
 
   function loadState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return defaultState();
-      return Object.assign(defaultState(), JSON.parse(raw));
+      const loaded = Object.assign(defaultState(), JSON.parse(raw));
+      loaded.dfName = validDfName(loaded.dfName) ? loaded.dfName : "df";
+      return loaded;
     } catch {
       return defaultState();
     }
@@ -84,6 +86,28 @@
 
   function isVocab(track) {
     return track === "vocab";
+  }
+
+  function validDfName(name) {
+    if (window.Quiz && typeof window.Quiz.isValidDfName === "function") {
+      return window.Quiz.isValidDfName(name);
+    }
+    return typeof name === "string" && /^[A-Za-z_][A-Za-z0-9_]*$/.test(name) && name.length <= 40;
+  }
+
+  function getDfName() {
+    return validDfName(state && state.dfName) ? state.dfName : "df";
+  }
+
+  function withDf(text) {
+    if (window.Quiz && typeof window.Quiz.applyDfName === "function") {
+      return window.Quiz.applyDfName(text, getDfName());
+    }
+    return text == null ? "" : String(text);
+  }
+
+  function hasPractice(t) {
+    return !!(t && t.practice !== false && t.questions && t.questions.length);
   }
 
   function trackLabel(track) {
@@ -141,7 +165,31 @@
   }
 
   function searchHay(parts) {
-    return parts.filter(Boolean).join(" \n ").toLowerCase();
+    const joined = parts.filter(Boolean).join(" \n ");
+    const named = withDf(joined);
+    if (named === joined) return joined.toLowerCase();
+    return (joined + " \n " + named).toLowerCase();
+  }
+
+  function tableSearchText(table) {
+    if (!table) return "";
+    const cols = table.columns || [];
+    const rows = table.rows || [];
+    return [cols.join(" ")].concat(rows.map((r) => (r || []).join(" "))).join(" \n ");
+  }
+
+  function lessonTableHtml(table) {
+    if (!table || !Array.isArray(table.columns) || !Array.isArray(table.rows)) return "";
+    const head = table.columns.map((c) => `<th>${escapeHtml(c)}</th>`).join("");
+    const body = table.rows.map((row) => {
+      const cells = (row || []).map((cell, i) => {
+        const isCode = i === 0 || i === (row.length - 1);
+        const val = escapeHtml(withDf(cell));
+        return isCode ? `<td dir="ltr"><span class="mono">${val}</span></td>` : `<td>${val}</td>`;
+      }).join("");
+      return `<tr>${cells}</tr>`;
+    }).join("");
+    return `<div class="lesson-table-wrap"><table class="lesson-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
   }
 
   function lessonSearchItems(track, topic) {
@@ -150,7 +198,7 @@
     const topicHay = searchHay([topic.title, topic.short, topic.intro, lesson.intro]);
     rows.push({ kind: "topic", idx: -1, title: topic.title, hay: topicHay, snippet: topic.intro || lesson.intro || "" });
     (lesson.items || []).forEach((it, idx) => {
-      const hay = searchHay([it.term, it.title, it.text, it.code, it.sample, it.he]);
+      const hay = searchHay([it.term, it.title, it.text, it.code, it.sample, it.he, tableSearchText(it.table)]);
       rows.push({
         kind: "item",
         idx,
@@ -214,7 +262,7 @@
   }
 
   function trackProgress(track) {
-    const list = topics(track);
+    const list = isVocab(track) ? topics(track) : topics(track).filter(hasPractice);
     let stars = 0, done = 0;
     list.forEach((t) => {
       const s = levelStats(track, t.id);
@@ -320,7 +368,9 @@
 
   function resetProgress() {
     if (!confirm("לאפס את כל ההתקדמות, הנקודות והרצף?")) return;
+    const kept = getDfName();
     state = defaultState();
+    state.dfName = kept;
     saveState();
     location.hash = "#home";
     setTimeout(() => toast("ההתקדמות אופסה"), 0);
@@ -334,6 +384,7 @@
     plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
     eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
     reset: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
+    table: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 10v10M15 10v10"/></svg>',
   };
   function loadFixes() {
     try {
@@ -497,6 +548,18 @@
       <div class="screen settings-screen">
         <h2>הגדרות</h2>
         ${fixesRowHtml()}
+        <div class="setlabel">דוגמאות Pandas</div>
+        <section class="sgroup">
+          <div class="srow srow-stack srow-df">
+            <span class="srow-ic">${ICON.table}</span>
+            <span class="srow-text">
+              <b>שם הטבלה בדוגמאות</b>
+              <small>ברירת המחדל היא <span dir="ltr">df</span>. אפשר לשנות, למשל ל־<span dir="ltr">menu_pd</span></small>
+              <input class="srow-input" id="df-name" type="text" dir="ltr" spellcheck="false" autocomplete="off" maxlength="40" value="${escapeHtml(getDfName())}" aria-label="שם הטבלה בדוגמאות" />
+            </span>
+          </div>
+          <p class="srow-error" id="df-name-error" hidden></p>
+        </section>
         <div class="setlabel">התקדמות</div>
         <section class="sgroup">
           <div class="srow">
@@ -509,7 +572,47 @@
       </div>`;
     bindChrome("#home");
     document.getElementById("btn-reset").onclick = resetProgress;
+    bindDfNameInput();
     bindFixes();
+  }
+
+  function bindDfNameInput() {
+    const input = document.getElementById("df-name");
+    const err = document.getElementById("df-name-error");
+    if (!input) return;
+    const showErr = (msg) => {
+      if (!err) return;
+      if (!msg) {
+        err.hidden = true;
+        err.textContent = "";
+        input.classList.remove("invalid");
+        return;
+      }
+      err.hidden = false;
+      err.textContent = msg;
+      input.classList.add("invalid");
+    };
+    const commit = () => {
+      const raw = String(input.value || "").trim();
+      const name = raw || "df";
+      if (!validDfName(name)) {
+        showErr("יש להזין שם משתנה חוקי בפייתון, בלי רווחים או מקפים.");
+        return;
+      }
+      showErr("");
+      input.value = name;
+      if (state.dfName === name) return;
+      state.dfName = name;
+      saveState();
+      toast(name === "df" ? "הדוגמאות ישתמשו ב-df" : "הדוגמאות ישתמשו ב-" + name);
+    };
+    input.addEventListener("change", commit);
+    input.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        input.blur();
+      }
+    });
   }
 
   function modeTabs(track, mode) {
@@ -592,7 +695,7 @@
 
   function topicNodeHtml(track, mode, t) {
     const s = levelStats(track, t.id);
-    const n = t.questions.length;
+    const n = (t.questions || []).length;
     const sub = mode === "learn"
       ? "הסברים ודוגמאות"
       : `${SESSION_SIZE} שאלות בסבב · מאגר ${n}` + (s.played ? " · שיא " + Math.round((s.best || 0) * 100) + "%" : "");
@@ -616,26 +719,31 @@
   function vocabEntryHtml(e) {
     return `<article class="vocab-entry" id="vocab-${escapeHtml(e.id)}" data-id="${escapeHtml(e.id)}">
       <h3><span class="term mono" dir="ltr">${escapeHtml(e.term)}</span><span class="vocab-he">${escapeHtml(e.he)}</span></h3>
-      <p>${hebText(e.explanation || "")}</p>
-      ${e.example ? `<pre class="code" dir="ltr">${escapeHtml(e.example)}</pre>` : ""}
+      <p>${hebText(withDf(e.explanation || ""))}</p>
+      ${e.example ? `<pre class="code" dir="ltr">${escapeHtml(withDf(e.example))}</pre>` : ""}
     </article>`;
   }
 
-  function chapterBlocks(track) {
+  function chapterBlocks(track, mode) {
     const list = topics(track);
     const byId = Object.fromEntries(list.map((t) => [t.id, t]));
     const chapters = chaptersFor(track);
     const chs = chapters.length ? chapters.slice() : [{ id: "all", title: "נושאים", topics: list.map((t) => t.id) }];
     const leftover = list.filter((t) => !chs.some((c) => (c.topics || []).includes(t.id)));
     if (leftover.length) chs.push({ id: "more", title: "עוד", topics: leftover.map((t) => t.id) });
+    const practiceOnly = mode === "practice" && !isVocab(track);
     return chs
-      .map((ch) => ({ id: ch.id, title: ch.title, items: (ch.topics || []).map((id) => byId[id]).filter(Boolean) }))
+      .map((ch) => ({
+        id: ch.id,
+        title: ch.title,
+        items: (ch.topics || []).map((id) => byId[id]).filter(Boolean).filter((t) => !practiceOnly || hasPractice(t)),
+      }))
       .filter((ch) => ch.items.length);
   }
 
   function learnTocHtml(track) {
     const vocab = isVocab(track);
-    const blocks = chapterBlocks(track).map((ch, i) => {
+    const blocks = chapterBlocks(track, "learn").map((ch, i) => {
       const n = i + 1;
       if (vocab) {
         const topicId = ch.items[0].id;
@@ -668,7 +776,7 @@
       return list.map((t) => topicNodeHtml(track, mode, t)).join("");
     }
     const blocks = [];
-    chapterBlocks(track).forEach((ch, idx) => {
+    chapterBlocks(track, mode).forEach((ch, idx) => {
       const open = isChapterOpen(track, ch.id, idx === 0);
       const countN = isVocab(track) && mode === "learn"
         ? (ch.items[0] && ch.items[0].entries ? ch.items[0].entries.length : 0)
@@ -738,7 +846,7 @@
     }
     box.innerHTML = grouped.map((g) => {
       const hits = g.hits.map((h) => {
-        const snip = snippetAround(h.row.snippet || h.row.hay, query);
+        const snip = snippetAround(withDf(h.row.snippet || ""), query);
         const label = h.row.kind === "topic" ? h.topic.title : (h.topic.title + " · " + h.row.title);
         const entryAttr = h.row.entryId ? ` data-entry="${escapeHtml(h.row.entryId)}"` : "";
         const hitTitle = h.row.term
@@ -805,7 +913,7 @@
       first = hero;
     }
     (lesson.items || []).forEach((it, idx) => {
-      const hay = searchHay([it.term, it.title, it.text, it.code, it.sample]);
+      const hay = searchHay([it.term, it.title, it.text, it.code, it.sample, tableSearchText(it.table)]);
       if (!hay.includes(q) && idx !== jumpIdx) return;
       if (hay.includes(q) || idx === jumpIdx) {
         const el = items[idx];
@@ -907,6 +1015,7 @@
 
   function renderLesson(track, topicId) {
     hideToast();
+    window.scrollTo(0, 0);
     const topic = findTopic(track, topicId);
     if (!topic) return (location.hash = "#" + track + "/learn");
     const lesson = lessonsFor(track)[topicId] || { intro: topic.intro || "", items: [] };
@@ -918,27 +1027,29 @@
           <div class="level-dot">${escapeHtml(topic.icon)}</div>
           <div>
             <h2>${escapeHtml(topic.title)}</h2>
-            <p>${escapeHtml(lesson.intro || topic.intro || "")}</p>
+            <p>${escapeHtml(withDf(lesson.intro || topic.intro || ""))}</p>
           </div>
         </div>
         ${(lesson.items || []).map((it, idx) => `
           <article class="lesson-item" data-idx="${idx}">
             <h3><span class="term" dir="ltr">${escapeHtml(it.term || "")}</span> ${escapeHtml(it.title || "")}</h3>
-            <p>${escapeHtml(it.text || "")}</p>
-            ${it.code ? `<pre class="code">${escapeHtml(it.code)}</pre>` : ""}
+            <p>${escapeHtml(withDf(it.text || ""))}</p>
+            ${it.table ? lessonTableHtml(it.table) : ""}
+            ${it.code ? `<pre class="code">${escapeHtml(withDf(it.code))}</pre>` : ""}
             <div class="lesson-sample" data-run="${it.run ? "1" : "0"}" data-idx="${idx}">
               ${it.run ? `<div class="sample-label">תוצאה על המסד לדוגמה</div><div class="sample-body"><span class="muted">מריץ…</span></div>`
-                       : (it.sample ? `<div class="sample-label">תוצאה לדוגמה</div>${/[֐-׿]/.test(it.sample) ? `<p class="sample-note">${escapeHtml(it.sample)}</p>` : `<pre class="code sample-static">${escapeHtml(it.sample)}</pre>`}` : "")}
+                       : (it.sample ? `<div class="sample-label">תוצאה לדוגמה</div>${/[֐-׿]/.test(it.sample) ? `<p class="sample-note">${escapeHtml(withDf(it.sample))}</p>` : `<pre class="code sample-static">${escapeHtml(withDf(it.sample))}</pre>`}` : "")}
             </div>
           </article>
         `).join("")}
         <div class="lesson-footer">
-          <button class="primary-btn ${pyish ? "py" : ""}" id="go-practice-topic">לתרגול הנושא</button>
+          ${hasPractice(topic) ? `<button class="primary-btn ${pyish ? "py" : ""}" id="go-practice-topic">לתרגול הנושא</button>` : ""}
           <button class="ghost-btn" id="back-learn-map">חזרה לנושאים</button>
         </div>
       </div>`;
     bindChrome("#" + track + "/learn");
-    document.getElementById("go-practice-topic").onclick = () => startLevel(track, topicId);
+    const goPractice = document.getElementById("go-practice-topic");
+    if (goPractice) goPractice.onclick = () => startLevel(track, topicId);
     document.getElementById("back-learn-map").onclick = () => (location.hash = "#" + track + "/learn");
     if (isSql(track)) hydrateLessonExamples(lesson.items || []);
     applyLessonHighlight(track, topicId, lesson);
@@ -975,6 +1086,7 @@
   function startLevel(track, topicId) {
     const topic = findTopic(track, topicId);
     if (!topic) return (location.hash = "#" + track + "/practice");
+    if (!hasPractice(topic)) return (location.hash = "#" + track + "/learn");
     const quiz = window.Quiz ? window.Quiz.pickQuiz(topic.questions, SESSION_SIZE) : topic.questions.slice(0, SESSION_SIZE);
     session = {
       track,
@@ -1012,11 +1124,11 @@
         </div>
         <div class="q-card" id="q-card">
           <span class="q-type">${TYPE_LABELS[q.type] || q.type}</span>
-          <p class="q-prompt">${hebText(q.prompt)}</p>
-          ${q.note ? `<p class="q-note">${escapeHtml(q.note)}</p>` : ""}
-          ${q.term ? `<pre class="code q-term" dir="ltr">${escapeHtml(q.term)}</pre>` : ""}
-          ${q.code ? `<pre class="code">${escapeHtml(q.code)}</pre>` : ""}
-          ${q.template && q.type === "fill" ? `<pre class="code">${escapeHtml(q.template)}</pre>` : ""}
+          <p class="q-prompt">${hebText(withDf(q.prompt))}</p>
+          ${q.note ? `<p class="q-note">${escapeHtml(withDf(q.note))}</p>` : ""}
+          ${q.term ? `<pre class="code q-term" dir="ltr">${escapeHtml(withDf(q.term))}</pre>` : ""}
+          ${q.code ? `<pre class="code">${escapeHtml(withDf(q.code))}</pre>` : ""}
+          ${q.template && q.type === "fill" ? `<pre class="code">${escapeHtml(withDf(q.template))}</pre>` : ""}
           <div id="q-body"></div>
           <div class="btn-row" id="q-actions"></div>
           <div id="q-extra"></div>
@@ -1046,7 +1158,7 @@
         b.className = "choice" + (choiceIsLtr(q, c) ? " ltr" : "");
         b.type = "button";
         b.dataset.idx = String(idx);
-        b.innerHTML = choiceIsLtr(q, c) ? `<span class="mono" dir="ltr">${escapeHtml(c)}</span>` : escapeHtml(c);
+        b.innerHTML = choiceIsLtr(q, c) ? `<span class="mono" dir="ltr">${escapeHtml(withDf(c))}</span>` : escapeHtml(withDf(c));
         if (already) {
           b.disabled = true;
           if (idx === q.answer) b.classList.add("correct");
@@ -1088,7 +1200,7 @@
         });
       }
     } else if (q.type === "write") {
-      const starter = q.starter || "";
+      const starter = withDf(q.starter || "");
       body.innerHTML = `
         <textarea class="code" id="code-area" autocapitalize="off" spellcheck="false" ${already ? "disabled" : ""}>${escapeHtml(already && already.code != null ? already.code : starter)}</textarea>
         ${isSql(session.track) ? `<p class="q-note" style="margin-top:8px">אפשר להריץ תצוגה מקדימה לפני הבדיקה. כשמבקשים עמודות מסוימות — בחרו אותן באותו סדר.</p>` : ""}
@@ -1108,7 +1220,7 @@
       hintBtn.textContent = "רמז";
       hintBtn.onclick = () => {
         session.hintUsed[q.id] = true;
-        extra.insertAdjacentHTML("beforeend", `<div class="hint-box"><b>רמז: </b>${escapeHtml(q.hint || "נסו שוב, בקצב שלכם.")}</div>`);
+        extra.insertAdjacentHTML("beforeend", `<div class="hint-box"><b>רמז: </b>${escapeHtml(withDf(q.hint || "נסו שוב, בקצב שלכם."))}</div>`);
         hintBtn.disabled = true;
       };
       actions.appendChild(hintBtn);
@@ -1204,7 +1316,7 @@
 
   function fillsOk(q, values) {
     if (window.Quiz && typeof window.Quiz.fillsOk === "function") {
-      return window.Quiz.fillsOk(q, values);
+      return window.Quiz.fillsOk(q, values, getDfName());
     }
     return false;
   }
@@ -1253,6 +1365,9 @@
         const code = document.getElementById("code-area").value;
         result.code = code;
         document.getElementById("code-area").disabled = true;
+        const codeForGrade = (window.Quiz && typeof window.Quiz.canonicalizeDfName === "function")
+          ? window.Quiz.canonicalizeDfName(code, getDfName())
+          : code;
         if (isSql(session.track)) {
           const engine = await ensureSql();
           const grade = window.SQLEngine.gradeSql(engine, window.SQL_SCHEMA.SCHEMA_SQL, q, code);
@@ -1260,7 +1375,7 @@
           result.detail = grade;
         } else {
           toast("טוען את מנוע פייתון…");
-          const grade = await window.PythonEngine.gradePython(q, code, () => {});
+          const grade = await window.PythonEngine.gradePython(q, codeForGrade, () => {});
           if (grade && grade.engineError) {
             hideToast();
             showPythonEngineError(q);
@@ -1332,12 +1447,12 @@
     const extra = document.getElementById("q-extra");
     const ok = !!result.ok;
     let html = `<div class="feedback ${ok ? "ok" : "bad"}"><h4>${ok ? "כל הכבוד!" : "עוד לא, בואו נראה למה"}</h4>`;
-    html += `<div class="explain">${hebText(q.explanation || "")}</div>`;
+    html += `<div class="explain">${hebText(withDf(q.explanation || ""))}</div>`;
     if (!ok && q.expectedSql) {
-      html += `<p>פתרון לדוגמה:</p><pre class="code">${escapeHtml(q.expectedSql)}</pre>`;
+      html += `<p>פתרון לדוגמה:</p><pre class="code">${escapeHtml(withDf(q.expectedSql))}</pre>`;
     }
     if (!ok && q.solution) {
-      html += `<p>פתרון לדוגמה:</p><pre class="code">${escapeHtml(q.solution)}</pre>`;
+      html += `<p>פתרון לדוגמה:</p><pre class="code">${escapeHtml(withDf(q.solution))}</pre>`;
     }
     if (!ok && q.type === "match" && q.pairs) {
       html += `<p>ההתאמות הנכונות:</p><ul class="match-key">${q.pairs.map((p) =>
@@ -1364,7 +1479,7 @@
             if (t.kind === "stdout") {
               return `<p>${t.ok ? "✓" : "✗"} פלט ${t.ok ? "תואם" : "לא תואם"}</p>`;
             }
-            return `<p>${t.ok ? "✓" : "✗"} <span class="mono">${escapeHtml(t.expr || "")}</span> ${t.ok ? "" : "— התקבל " + escapeHtml(JSON.stringify(t.got)) + ", צפוי " + escapeHtml(JSON.stringify(t.expected))}</p>`;
+            return `<p>${t.ok ? "✓" : "✗"} <span class="mono">${escapeHtml(withDf(t.expr || ""))}</span> ${t.ok ? "" : "— התקבל " + escapeHtml(JSON.stringify(t.got)) + ", צפוי " + escapeHtml(JSON.stringify(t.expected))}</p>`;
           }).join("");
         }
       }

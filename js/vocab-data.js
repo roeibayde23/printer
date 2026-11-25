@@ -49,13 +49,20 @@
     "title": "Pandas",
     "short": "Pandas",
     "icon": "7",
-    "intro": "Series ו-DataFrame: אינדקס, עמודות, בחירה, ניקוי וקיבוץ נתונים."
+    "intro": "Series ו-DataFrame: אינדקס, עמודות, בחירה, ניקוי, קיבוץ וטבלאות ציר."
+  },
+  {
+    "id": "matplotlib",
+    "title": "Matplotlib",
+    "short": "Matplotlib",
+    "icon": "8",
+    "intro": "ציור גרפים בפייתון: קו, עמודות, היסטוגרמה, פיזור, כמה תרשימים באיור, כותרות ומקרא."
   },
   {
     "id": "general",
     "title": "מושגים כלליים",
     "short": "כללי",
-    "icon": "8",
+    "icon": "9",
     "intro": "מונחים כלליים במדעי הנתונים, בקבצים ובפיתוח שמופיעים לאורך המוצר."
   }
 ];
@@ -1980,6 +1987,326 @@
     "he": "תצוגה מוחלפת",
     "explanation": "מחליף שורות ועמודות. שימושי אחרי describe, כדי ששמות העמודות יופיעו בשורות.",
     "example": "df.describe().T"
+  },
+  {
+    "id": "pandas__multiindex",
+    "chapter": "pandas",
+    "term": "MultiIndex",
+    "he": "אינדקס היררכי",
+    "explanation": "אינדקס עם כמה רמות, שנוצר למשל אחרי קיבוץ לפי כמה עמודות. דומה למפתח ראשי מורכב.",
+    "example": "df.groupby(['region', 'product'])['sales'].sum().index"
+  },
+  {
+    "id": "pandas__xs",
+    "chapter": "pandas",
+    "term": "xs",
+    "he": "חתך לפי רמת אינדקס",
+    "explanation": "מוציא מ-MultiIndex את כל השורות שמתאימות לערך ברמה אחת, בלי לציין את שאר הרמות.",
+    "example": "df.xs('East', level='region')"
+  },
+  {
+    "id": "pandas__swaplevel",
+    "chapter": "pandas",
+    "term": "swaplevel",
+    "he": "החלפת רמות אינדקס",
+    "explanation": "מחליף את סדר הרמות ב-MultiIndex, למשל מ-(אזור, מוצר) ל-(מוצר, אזור).",
+    "example": "df.swaplevel()"
+  },
+  {
+    "id": "pandas__sortuscoreindex",
+    "chapter": "pandas",
+    "term": "sort_index",
+    "he": "מיון לפי האינדקס",
+    "explanation": "ממיין את הטבלה לפי האינדקס. ב-MultiIndex אפשר לבחור רמה עם level ולבחור כיוון עם ascending.",
+    "example": "df.sort_index(level='product')"
+  },
+  {
+    "id": "pandas__agg",
+    "chapter": "pandas",
+    "term": "agg",
+    "he": "הפעלת כמה סיכומים",
+    "explanation": "מפעיל כמה פונקציות סיכום בבת אחת, גם על עמודות שונות, בדרך כלל עם מילון של עמודה לפונקציה.",
+    "example": "df.groupby('city').agg({'sales': 'sum', 'qty': 'mean'})"
+  },
+  {
+    "id": "pandas__seriesdotstr",
+    "chapter": "pandas",
+    "term": "Series.str",
+    "he": "גישה לשיטות מחרוזת",
+    "explanation": "מאפשר להפעיל שיטות טקסט על כל ערכי העמודה: אותיות גדולות, החלפה, ניקוי רווחים ועוד.",
+    "example": "df['city'].str.strip()"
+  },
+  {
+    "id": "pandas__seriesdotstrdotupper",
+    "chapter": "pandas",
+    "term": "Series.str.upper",
+    "he": "אותיות גדולות בעמודה",
+    "explanation": "ממיר את כל המחרוזות בעמודה לאותיות גדולות, בלי לולאה ידנית.",
+    "example": "df['city'].str.upper()"
+  },
+  {
+    "id": "pandas__seriesdotstrdotreplace",
+    "chapter": "pandas",
+    "term": "Series.str.replace",
+    "he": "החלפת טקסט בעמודה",
+    "explanation": "מחליף מופעים של תבנית או מחרוזת בכל ערכי העמודה.",
+    "example": "df['city'].str.replace(' ', '', regex=False)"
+  },
+  {
+    "id": "pandas__seriesdotstrdotstrip",
+    "chapter": "pandas",
+    "term": "Series.str.strip",
+    "he": "ניקוי רווחים בעמודה",
+    "explanation": "מסיר רווחים (או תווים אחרים) מתחילת כל מחרוזת וסופה בעמודה.",
+    "example": "df['city'].str.strip()"
+  },
+  {
+    "id": "pandas__seriesdotstrdotcapitalize",
+    "chapter": "pandas",
+    "term": "Series.str.capitalize",
+    "he": "אות גדולה בתחילת המחרוזת",
+    "explanation": "הופך את האות הראשונה של כל ערך בעמודה לגדולה, ואת השאר לקטנות.",
+    "example": "df['city'].str.capitalize()"
+  },
+  {
+    "id": "pandas__pdtodotdatetime",
+    "chapter": "pandas",
+    "term": "pd.to_datetime",
+    "he": "המרה לתאריך",
+    "explanation": "ממיר מחרוזות או מספרים לערכי datetime. אפשר לציין format אם הפורמט מיוחד.",
+    "example": "pd.to_datetime(df['day'], format='%d-%m-%Y')"
+  },
+  {
+    "id": "pandas__dtdotstrftime",
+    "chapter": "pandas",
+    "term": "dt.strftime",
+    "he": "פורמט תאריך למחרוזת",
+    "explanation": "מחזיר את ערכי התאריך כמחרוזות בפורמט שתבחרו, למשל יום-חודש-שנה.",
+    "example": "df['day'].dt.strftime('%d-%m-%Y')"
+  },
+  {
+    "id": "pandas__resample",
+    "chapter": "pandas",
+    "term": "resample",
+    "he": "קיבוץ לפי מרווח זמן",
+    "explanation": "מסכם נתונים לפי מרווחי זמן כשהאינדקס הוא datetime. rule קובע את המרווח, למשל ME לחודש.",
+    "example": "df.resample('ME')['sales'].sum()"
+  },
+  {
+    "id": "pandas__pivotuscoretable",
+    "chapter": "pandas",
+    "term": "pivot_table",
+    "he": "טבלת ציר",
+    "explanation": "מסכם את הטבלה לפי שורות ועמודות שתבחרו, עם פונקציית סיכום כמו sum או mean.",
+    "example": "df.pivot_table(values='Sales', index='Region', columns='Product', aggfunc='sum')"
+  },
+  {
+    "id": "pandas__touscoreexcel",
+    "chapter": "pandas",
+    "term": "to_excel",
+    "he": "שמירה לקובץ אקסל",
+    "explanation": "מייצא את הטבלה לקובץ Excel. לעיתים משלבים index=False כדי לא לכלול את האינדקס.",
+    "example": "df.to_excel('report.xlsx', index=False)"
+  },
+  {
+    "id": "pandas__touscorehtml",
+    "chapter": "pandas",
+    "term": "to_html",
+    "he": "שמירה לטבלת HTML",
+    "explanation": "יוצר קובץ או מחרוזת HTML עם הטבלה, מתאים להצגה בדף אינטרנט.",
+    "example": "df.to_html('table.html', index=False)"
+  },
+  {
+    "id": "matplotlib__pltdotplot",
+    "chapter": "matplotlib",
+    "term": "plt.plot",
+    "he": "גרף קו",
+    "explanation": "מצייר גרף קו דו-ממדי. הארגומנט הראשון הוא ערכי ציר X, והשני ערכי ציר Y.",
+    "example": "plt.plot(x, y)"
+  },
+  {
+    "id": "matplotlib__pltdotshow",
+    "chapter": "matplotlib",
+    "term": "plt.show",
+    "he": "הצגת הגרף",
+    "explanation": "מציג את הגרף על המסך. מחוץ למחברת Jupyter הקריאה הזו נחוצה כדי לראות את הציור.",
+    "example": "plt.show()"
+  },
+  {
+    "id": "matplotlib__pltdottitle",
+    "chapter": "matplotlib",
+    "term": "plt.title",
+    "he": "כותרת לגרף",
+    "explanation": "מוסיף כותרת לתרשים הנוכחי.",
+    "example": "plt.title('Sales over time')"
+  },
+  {
+    "id": "matplotlib__pltdotxlabel",
+    "chapter": "matplotlib",
+    "term": "plt.xlabel",
+    "he": "תווית לציר X",
+    "explanation": "כותב כותרת לציר האופקי של הגרף.",
+    "example": "plt.xlabel('Day')"
+  },
+  {
+    "id": "matplotlib__pltdotylabel",
+    "chapter": "matplotlib",
+    "term": "plt.ylabel",
+    "he": "תווית לציר Y",
+    "explanation": "כותב כותרת לציר האנכי של הגרף.",
+    "example": "plt.ylabel('Amount')"
+  },
+  {
+    "id": "matplotlib__pltdotxlim",
+    "chapter": "matplotlib",
+    "term": "plt.xlim",
+    "he": "טווח ציר X",
+    "explanation": "מגביל את טווח הציר האופקי. אם לא קובעים, Matplotlib מחשב טווח לבד.",
+    "example": "plt.xlim(0, 10)"
+  },
+  {
+    "id": "matplotlib__pltdotylim",
+    "chapter": "matplotlib",
+    "term": "plt.ylim",
+    "he": "טווח ציר Y",
+    "explanation": "מגביל את טווח הציר האנכי.",
+    "example": "plt.ylim(0, 100)"
+  },
+  {
+    "id": "matplotlib__pltdotsavefig",
+    "chapter": "matplotlib",
+    "term": "plt.savefig",
+    "he": "שמירת הגרף לתמונה",
+    "explanation": "שומר את האיור לקובץ תמונה, למשל PNG. כדאי להריץ את כל פקודות הציור לפני השמירה.",
+    "example": "plt.savefig('chart.png', bbox_inches='tight')"
+  },
+  {
+    "id": "matplotlib__pltdotfigure",
+    "chapter": "matplotlib",
+    "term": "plt.figure",
+    "he": "יצירת קנבס",
+    "explanation": "יוצר איור ריק (Figure) שאפשר להוסיף אליו ציירים ולשלוט בגודל ובפריסה.",
+    "example": "fig = plt.figure(figsize=(10, 3))"
+  },
+  {
+    "id": "matplotlib__figsize",
+    "chapter": "matplotlib",
+    "term": "figsize",
+    "he": "גודל האיור באינצ'ים",
+    "explanation": "זוג מספרים (רוחב, גובה) שקובע את גודל הקנבס באינצ'ים.",
+    "example": "plt.subplots(figsize=(8, 4))"
+  },
+  {
+    "id": "matplotlib__figdotadduscoreaxes",
+    "chapter": "matplotlib",
+    "term": "fig.add_axes",
+    "he": "הוספת אזור ציור",
+    "explanation": "מוסיף ציר לקנבס במיקום ובגודל יחסיים: [x0, y0, width, height].",
+    "example": "ax = fig.add_axes([0, 0, 0.5, 1])"
+  },
+  {
+    "id": "matplotlib__pltdotsubplots",
+    "chapter": "matplotlib",
+    "term": "plt.subplots",
+    "he": "יצירת כמה תרשימים",
+    "explanation": "יוצר איור ומערך של ציירים בפריסת רשת לפי nrows ו-ncols. מחזיר Figure ו-Axes.",
+    "example": "fig, axes = plt.subplots(2, 2)"
+  },
+  {
+    "id": "matplotlib__axes",
+    "chapter": "matplotlib",
+    "term": "Axes",
+    "he": "תרשים בודד באיור",
+    "explanation": "האובייקט שעליו מציירים את הנתונים. בפריסה מרובה ניגשים אליו עם axes[i] או axes[row, col].",
+    "example": "axes[0, 1].plot(x, y)"
+  },
+  {
+    "id": "matplotlib__tightuscorelayout",
+    "chapter": "matplotlib",
+    "term": "tight_layout",
+    "he": "ריווח אוטומטי",
+    "explanation": "מתאים את הרווחים בין התרשימים כדי שכותרות ותוויות לא יידרסו או ייחתכו.",
+    "example": "fig.tight_layout()"
+  },
+  {
+    "id": "matplotlib__subplotsuscoreadjust",
+    "chapter": "matplotlib",
+    "term": "subplots_adjust",
+    "he": "ריווח ידני",
+    "explanation": "כיוונון ידני של השוליים והרווחים בין תרשימים: left, right, top, bottom, wspace, hspace.",
+    "example": "fig.subplots_adjust(hspace=0.4)"
+  },
+  {
+    "id": "matplotlib__figdotsuptitle",
+    "chapter": "matplotlib",
+    "term": "fig.suptitle",
+    "he": "כותרת לכל האיור",
+    "explanation": "מוסיף כותרת כללית מעל כל התרשימים באיור, לא רק מעל תרשים אחד.",
+    "example": "fig.suptitle('Weekly report', fontsize=14)"
+  },
+  {
+    "id": "matplotlib__axdotlegend",
+    "chapter": "matplotlib",
+    "term": "ax.legend",
+    "he": "מקרא",
+    "explanation": "מציג מקרא לסדרות שצוירו עם label. loc קובע אם המקרא יופיע בתוך הגרף או מחוצה לו.",
+    "example": "ax.legend(loc=1)"
+  },
+  {
+    "id": "matplotlib__linestyle",
+    "chapter": "matplotlib",
+    "term": "linestyle",
+    "he": "סגנון הקו",
+    "explanation": "קובע איך נראה הקו: רציף, מקווקו או מנוקד. אפשר גם בקיצור ls.",
+    "example": "ax.plot(x, y, linestyle='--')"
+  },
+  {
+    "id": "matplotlib__marker",
+    "chapter": "matplotlib",
+    "term": "marker",
+    "he": "סימן על נקודת נתון",
+    "explanation": "מוסיף סימן גלוי בכל נקודה על הקו, למשל עיגול, פלוס או איקס.",
+    "example": "ax.plot(x, y, marker='o')"
+  },
+  {
+    "id": "matplotlib__axdotbar",
+    "chapter": "matplotlib",
+    "term": "ax.bar",
+    "he": "גרף עמודות",
+    "explanation": "מצייר עמודות להשוואה בין קטגוריות בדידות: קטגוריות בציר X וערכים בציר Y.",
+    "example": "ax.bar(categories, values)"
+  },
+  {
+    "id": "matplotlib__axdothist",
+    "chapter": "matplotlib",
+    "term": "ax.hist",
+    "he": "היסטוגרמה",
+    "explanation": "מציג התפלגות של משתנה רציף. bins קובע כמה תאים יהיו, וככל שיש יותר כך הפירוט עולה.",
+    "example": "ax.hist(data, bins=10)"
+  },
+  {
+    "id": "matplotlib__axdotscatter",
+    "chapter": "matplotlib",
+    "term": "ax.scatter",
+    "he": "גרף פיזור",
+    "explanation": "מצייר נקודות לקשר בין שני משתנים: X בדרך כלל בלתי תלוי ו-Y תלוי.",
+    "example": "ax.scatter(x, y)"
+  },
+  {
+    "id": "matplotlib__bins",
+    "chapter": "matplotlib",
+    "term": "bins",
+    "he": "תאי היסטוגרמה",
+    "explanation": "מספר התאים בהיסטוגרמה. יותר תאים נותנים פירוט גבוה יותר, ולעיתים גם יותר רעש.",
+    "example": "ax.hist(data, bins=20)"
+  },
+  {
+    "id": "matplotlib__bboxuscoreinches",
+    "chapter": "matplotlib",
+    "term": "bbox_inches",
+    "he": "גבולות השמירה",
+    "explanation": "פרמטר ב-savefig. עם tight נשמרים גם כותרות ותוויות בלי שייחתכו.",
+    "example": "fig.savefig('chart.png', bbox_inches='tight')"
   },
   {
     "id": "general__data-science",

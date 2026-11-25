@@ -509,6 +509,260 @@
         "sample": "[10.0, 0.0, 0.0, 40.0, 50.0]\n[10.0, 33.333333333333336, 33.333333333333336, 40.0, 50.0]"
       }
     ]
+  },
+  "pandas-groupby": {
+    "intro": "בשיעור הזה מקבצים טבלה לפי עמודה אחת או יותר, עובדים עם אינדקס היררכי (MultiIndex), חותכים חתך ב-xs, ומכירים גם צרוף טבלאות, עיבוד מחרוזות ותאריכים.",
+    "items": [
+      {
+        "term": "groupby",
+        "title": "קיבוץ לפי עמודה",
+        "text": "df.groupby('col') מקבץ את שורות הטבלה לפי ערכי העמודה, ואז אפשר להפעיל על כל קבוצה חישוב כמו sum או mean. זה דומה ל-GROUP BY ב-SQL: קודם מחלקים לקבוצות, ואז מסכמים. בדרך כלל בוחרים גם איזו עמודה לסכם, למשל df.groupby('city')['sales'].sum().",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({\n    'city': ['Haifa', 'Tel Aviv', 'Haifa'],\n    'sales': [100, 80, 40]\n})\nprint(df.groupby('city')['sales'].sum().to_dict())",
+        "run": false,
+        "sample": "{'Haifa': 140, 'Tel Aviv': 80}"
+      },
+      {
+        "term": "value_counts",
+        "title": "ספירת הופעות בכל קבוצה",
+        "text": "df.value_counts() (או על עמודה: df['col'].value_counts()) מחזיר כמה פעמים מופיע כל ערך. זה עוזר להבין את גודל הקבוצות לפני קיבוץ, או לבדוק במהירות איזה ערך שכיח יותר.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'city': ['Haifa', 'Tel Aviv', 'Haifa', 'Haifa']})\nprint(df['city'].value_counts().to_dict())",
+        "run": false,
+        "sample": "{'Haifa': 3, 'Tel Aviv': 1}"
+      },
+      {
+        "term": "MultiIndex",
+        "title": "קיבוץ לפי כמה עמודות",
+        "text": "כשמקבצים לפי כמה עמודות, נוצר מפתח מורכב לכל קבוצה. התוצאה מקבלת אינדקס היררכי (MultiIndex) — כמו מפתח ראשי מורכב ב-SQL. df.index מציג את צירופי הרמות כצמדים (tuples), ו-df.loc[] ניגש לשורה כשמציינים את כל הרמות, למשל loc[('East', 'A')].",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({\n    'region': ['East', 'East', 'West', 'West'],\n    'product': ['A', 'B', 'A', 'B'],\n    'sales': [10, 20, 30, 40]\n})\ng = df.groupby(['region', 'product'])['sales'].sum()\nprint(list(g.index))\nprint(int(g.loc[('East', 'A')]))",
+        "run": false,
+        "sample": "[('East', 'A'), ('East', 'B'), ('West', 'A'), ('West', 'B')]\n10"
+      },
+      {
+        "term": "xs",
+        "title": "חתך לפי רמת אינדקס",
+        "text": "xs (cross section) חותך נתונים מ-MultiIndex לפי רמה אחת, בלי לציין את כל המפתח. df.xs(key, level=) מקבל את הערך לחילוץ (key) ואת שם הרמה (level). למשל, כל השורות שבהן האזור הוא East, בלי קשר למוצר.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({\n    'region': ['East', 'East', 'West'],\n    'product': ['A', 'B', 'A'],\n    'sales': [10, 20, 30]\n})\ng = df.groupby(['region', 'product'])['sales'].sum()\nprint(g.xs('East', level='region').to_dict())",
+        "run": false,
+        "sample": "{'A': 10, 'B': 20}"
+      },
+      {
+        "term": "swaplevel / sort_index",
+        "title": "החלפת רמות ומיון האינדקס",
+        "text": "swaplevel() מחליף את סדר רמות האינדקס, למשל מ-(אזור, מוצר) ל-(מוצר, אזור). sort_index(level=, ascending=) ממיין לפי רמה מסוימת. אחרי החלפת רמות נהוג למיין, כדי שהאינדקס יהיה מסודר ונוח לחיפוש.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({\n    'region': ['East', 'West', 'East'],\n    'product': ['A', 'A', 'B'],\n    'sales': [10, 30, 20]\n})\ng = df.groupby(['region', 'product'])['sales'].sum()\nswapped = g.swaplevel().sort_index(level=0)\nprint(list(swapped.index))",
+        "run": false,
+        "sample": "[('A', 'East'), ('A', 'West'), ('B', 'East')]"
+      },
+      {
+        "term": "agg",
+        "title": "כמה חישובים בבת אחת",
+        "text": "agg() מאפשר להפעיל כמה פונקציות סיכום יחד, גם על עמודות שונות. מעבירים מילון: שם העמודה → שם הפונקציה או רשימת פונקציות. למשל סיכום מכירות וממוצע כמות באותה קריאה.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({\n    'city': ['Haifa', 'Haifa', 'Tel Aviv'],\n    'sales': [100, 40, 80],\n    'qty': [2, 1, 4]\n})\nout = df.groupby('city').agg({'sales': 'sum', 'qty': 'mean'})\nprint(out.loc['Haifa', 'sales'])\nprint(out.loc['Haifa', 'qty'])",
+        "run": false,
+        "sample": "140.0\n1.5"
+      },
+      {
+        "term": "concat / merge",
+        "title": "צירוף ומיזוג טבלאות",
+        "text": "pd.concat() מדביק טבלאות אחת מתחת לשנייה (axis=0) או זו לצד זו (axis=1), כשהאינדקסים או העמודות מתאימים. pd.merge() מחבר כמו JOIN ב-SQL: how קובע את הסוג (inner, outer, left, right). אם שמות עמודות המפתח שונים משתמשים ב-left_on ו-right_on, ואם מתחברים לפי האינדקס — ב-left_index או right_index. suffixes מוסיף סיומת לעמודות באותו שם משתי הטבלאות.",
+        "code": "import pandas as pd\n\nleft = pd.DataFrame({'id': [1, 2], 'name': ['Ana', 'Ben']})\nright = pd.DataFrame({'id': [1, 2], 'city': ['Haifa', 'Eilat']})\nprint(pd.merge(left, right, on='id')['city'].tolist())\nprint(pd.concat([left['name'], pd.Series(['Cai'])], ignore_index=True).tolist())",
+        "run": false,
+        "sample": "['Haifa', 'Eilat']\n['Ana', 'Ben', 'Cai']"
+      },
+      {
+        "term": "Series.str",
+        "title": "שיטות מחרוזת על עמודה",
+        "text": "כשעמודה מכילה טקסט, ניגשים לשיטות המחרוזת דרך .str. למשל str.upper() לאותיות גדולות, str.replace() להחלפת תבנית, str.strip() להסרת רווחים בקצוות, ו-str.capitalize() לאות גדולה בתחילת המחרוזת. אם צריך לוגיקה מורכבת יותר, apply() מפעילה פונקציית פייתון על כל ערך.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'city': ['  haifa', 'TEL aviv']})\nprint(df['city'].str.strip().str.capitalize().tolist())\nprint(df['city'].str.replace(' ', '', regex=False).tolist())",
+        "run": false,
+        "sample": "['Haifa', 'Tel aviv']\n['haifa', 'TELaviv']"
+      },
+      {
+        "term": "to_datetime / resample",
+        "title": "תאריכים וקיבוץ לפי זמן",
+        "text": "pd.to_datetime() ממיר מחרוזות לתאריכים, ואפשר לציין format אם הפורמט מיוחד. אחרי שיש datetime, df['col'].dt.strftime() מחזיר אותם כמחרוזת בפורמט שתבחרו, למשל %d-%m-%Y. אם ממירים את עמודת הזמן לאינדקס, אפשר לקבץ לפי מרווחי זמן עם resample(rule=): למשל A לשנה, B ליום עסקים, ואז sum או mean.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({\n    'day': ['2024-01-15', '2024-01-20', '2024-02-03'],\n    'sales': [10, 20, 30]\n})\ndf['day'] = pd.to_datetime(df['day'])\nprint(df['day'].dt.strftime('%m-%Y').tolist())\nprint(df.set_index('day').resample('ME')['sales'].sum().tolist())",
+        "run": false,
+        "sample": "['01-2024', '01-2024', '02-2024']\n[30, 30]"
+      },
+      {
+        "term": "strftime codes",
+        "title": "קודי פורמט לתאריך",
+        "text": "הקודים הנפוצים ב-format של to_datetime ו-strftime. הדוגמאות הן עבור 12 בדצמבר 2000, יום שלישי בחצות. מקפים ורווחים במחרוזת המקור צריכים להופיע בדיוק גם ב-format.",
+        "table": {
+          "columns": ["קוד", "משמעות", "דוגמה"],
+          "rows": [
+            ["%d", "יום בחודש, מ-01 עד 31", "12"],
+            ["%m", "חודש כמספר, מ-01 עד 12", "12"],
+            ["%b", "שם חודש מקוצר", "Dec"],
+            ["%B", "שם חודש מלא", "December"],
+            ["%y", "שנה בשתי ספרות", "00"],
+            ["%Y", "שנה בארבע ספרות", "2000"],
+            ["%H", "שעה (24 שעות), מ-00 עד 23", "00"],
+            ["%M", "דקות, מ-00 עד 59", "00"],
+            ["%S", "שניות, מ-00 עד 59", "00"],
+            ["%a / %A", "יום בשבוע, מקוצר / מלא", "Tue / Tuesday"]
+          ]
+        },
+        "code": "import pandas as pd\n\nraw = '12- - Dec - - 2000'\nfmt = '%d- - %b - - %Y'\nts = pd.to_datetime(raw, format=fmt)\nprint(ts)\nprint(ts.strftime('%A, %d %B %Y'))",
+        "run": false,
+        "sample": "2000-12-12 00:00:00\nTuesday, 12 December 2000"
+      }
+    ]
+  },
+  "pandas-pivot": {
+    "intro": "טבלת ציר מסכמת נתונים גולמיים לפי שורות ועמודות. מכאן נייצא טבלה לקובץ, ונתחיל לעבוד עם Matplotlib — ספריית הגרפים של פייתון.",
+    "items": [
+      {
+        "term": "Pivot Table",
+        "title": "מהי טבלת ציר",
+        "text": "טבלת ציר היא כלי לסיכום נתונים, כמו באקסל או ב-Google Sheets וגם ב-Pandas. היא מאפשרת לקבץ, לסנן ולסכם לפי קטגוריות בשורות ובעמודות, עם חישובים כמו סכום, ספירה, ממוצע או אחוזים. כך הופכים טבלת מכירות ארוכה לדוח קצר: למשל אזור בשורות, מוצר בעמודות, וסכום המכירות בתאים.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({\n    'Product': ['Apple', 'Banana', 'Apple', 'Banana'],\n    'Region': ['East', 'West', 'West', 'East'],\n    'Sales': [100, 150, 200, 120]\n})\nprint(df.shape)\nprint(df['Sales'].sum())",
+        "run": false,
+        "sample": "(4, 3)\n570"
+      },
+      {
+        "term": "pivot_table",
+        "title": "בניית טבלת ציר ב-Pandas",
+        "text": "df.pivot_table() בונה את הסיכום בקוד. הפרמטרים העיקריים: values — איזה ערך לסכם, index — מה יופיע בשורות, columns — מה יופיע בעמודות, ו-aggfunc — איך לסכם (sum, mean, count ועוד). בדוגמה: מכירות לפי אזור ומוצר, כולל סכומי ביניים.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({\n    'Product': ['Apple', 'Banana', 'Apple', 'Banana'],\n    'Region': ['East', 'West', 'West', 'East'],\n    'Sales': [100, 150, 200, 120]\n})\npt = df.pivot_table(values='Sales', index='Region', columns='Product', aggfunc='sum', margins=True, margins_name='Total')\nprint(int(pt.loc['East', 'Apple']))\nprint(int(pt.loc['Total', 'Total']))",
+        "run": false,
+        "sample": "100\n570"
+      },
+      {
+        "term": "לפני pivot",
+        "title": "מצמצמים עמודות, ורק משנים צורה",
+        "text": "טבלת ציר לא מוסיפה מידע חדש — היא רק משנה את צורת הנתונים הקיימים כדי שיהיו קריאים יותר. לפני ה-pivot כדאי לקחת רק את העמודות שצריך, ואז להפעיל pivot_table על הטבלה המצומצמת.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({\n    'Company': ['A', 'A', 'B'],\n    'Product': ['X', 'Y', 'X'],\n    'Licenses': [2, 1, 3],\n    'Notes': ['ok', 'ok', 'na']\n})\nslim = df[['Company', 'Product', 'Licenses']]\npt = slim.pivot_table(values='Licenses', index='Company', columns='Product', aggfunc='sum')\nprint(list(slim.columns))\nprint(int(pt.loc['A', 'X']))",
+        "run": false,
+        "sample": "['Company', 'Product', 'Licenses']\n2"
+      },
+      {
+        "term": "to_csv / to_excel / to_html",
+        "title": "ייצוא הטבלה לקובץ",
+        "text": "אחרי שעיבדנו נתונים, לעיתים רוצים לשמור אותם לקובץ: לדוח, לשיתוף, או להמשך עבודה. Pandas נותנת שיטות פשוטות: df.to_csv('filename.csv') לקובץ CSV, df.to_excel('filename.xlsx') לאקסל, ו-df.to_html('filename.html') לטבלת HTML בדף אינטרנט. בכולן צריך לתת שם קובץ עם סיומת מתאימה.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'Product': ['Apple', 'Banana'], 'Sales': [100, 120]})\ncsv_text = df.to_csv(index=False)\nhtml_text = df.to_html(index=False)\nprint(csv_text.strip().splitlines()[0])\nprint('table' in html_text.lower())",
+        "run": false,
+        "sample": "Product,Sales\nTrue"
+      },
+      {
+        "term": "index=False",
+        "title": "האם לכלול את האינדקס בייצוא",
+        "text": "בשיטות הייצוא, הפרמטר index קובע אם עמודת האינדקס תיכנס לקובץ. index=True כולל אותה, ו-index=False משמיט אותה. בדרך כלל מעדיפים index=False כדי שהקובץ יהיה נקי, במיוחד כשהאינדקס הוא רק 0, 1, 2 ולא חלק מהנתונים עצמם.",
+        "code": "import pandas as pd\n\ndf = pd.DataFrame({'Sales': [100, 120]}, index=['East', 'West'])\nprint(df.to_csv())\nprint('---')\nprint(df.to_csv(index=False))",
+        "run": false,
+        "sample": ",Sales\nEast,100\nWest,120\n\n---\nSales\n100\n120\n"
+      },
+      {
+        "term": "Matplotlib",
+        "title": "מבוא לספריית הגרפים",
+        "text": "Matplotlib היא ספריית קוד פתוח להצגת נתונים בפייתון: גרפי קו, עמודות, היסטוגרמות, פיזור ועוד. התחביר מזכיר MATLAB, אבל היא מקורית לפייתון. מקובל לייבא כך: import matplotlib.pyplot as plt. משם מציירים עם plt, ואפשר לשלב גם מערכי NumPy.",
+        "code": "import matplotlib.pyplot as plt\n\nprint(plt.plot.__name__)\nprint('pyplot')",
+        "run": false,
+        "sample": "plot\npyplot"
+      },
+      {
+        "term": "plt.plot",
+        "title": "גרף קו, כותרת וצירים",
+        "text": "plt.plot(x, y) מצייר גרף קו דו-ממדי: הארגומנט הראשון הוא ערכי ציר X, והשני ערכי ציר Y. plt.title() מוסיף כותרת, plt.xlabel() ו-plt.ylabel() מציינים את הצירים. מחוץ למחברת Jupyter חובה לקרוא ל-plt.show() כדי שהגרף יופיע על המסך.",
+        "code": "import matplotlib.pyplot as plt\n\nx = [1, 2, 3]\ny = [2, 4, 6]\nline, = plt.plot(x, y)\nplt.title('Sales')\nplt.xlabel('Day')\nplt.ylabel('Amount')\nprint(list(line.get_ydata()))\nplt.close()",
+        "run": false,
+        "sample": "[2, 4, 6]"
+      },
+      {
+        "term": "xlim / savefig",
+        "title": "טווח הצירים ושמירת הגרף",
+        "text": "plt.xlim() ו-plt.ylim() מגבילים את טווח הצירים. אם לא קובעים אותם, Matplotlib מחשב טווח לבד לפי הנתונים. plt.savefig('filename.png') שומר את הגרף לקובץ תמונה. חשוב להריץ את כל פקודות הציור באותו תא קוד, כדי לא לאבד כותרות והגדרות לפני השמירה.",
+        "code": "import matplotlib.pyplot as plt\n\nplt.plot([0, 1], [0, 10])\nplt.xlim(0, 1)\nplt.ylim(0, 10)\nprint(plt.xlim())\nplt.close()",
+        "run": false,
+        "sample": "(0.0, 1.0)"
+      },
+      {
+        "term": "figure / add_axes",
+        "title": "קנבס, רכיבי צירים וגודל",
+        "text": "plt.figure() יוצר קנבס ריק (ברירת המחדל 640×480 פיקסלים). fig.add_axes([x0, y0, width, height]) מוסיף אזור ציור על הקנבס: x0,y0 הם הפינה השמאלית-תחתונה, והמידות יחסיות לגודל התיבה (למשל [0, 0, 0.5, 1] תופס חצי רוחב ואת כל הגובה). כך אפשר גם גרף בתוך גרף. plt.figure(figsize=(width, height)) קובע את הגודל באינצ'ים, למשל figsize=(10, 3) לקנבס רחב ונמוך. fig.savefig(..., bbox_inches='tight') שומר בלי לחתוך כותרות ותוויות.",
+        "code": "import matplotlib.pyplot as plt\n\nfig = plt.figure(figsize=(10, 3))\nax = fig.add_axes([0, 0, 0.5, 1])\nprint(tuple(fig.get_size_inches()))\nprint(ax.get_position().width)\nplt.close()",
+        "run": false,
+        "sample": "(10.0, 3.0)\n0.5"
+      },
+      {
+        "term": "add_axes inset",
+        "title": "גרף מוגדל בתוך גרף",
+        "text": "אפשר לשים שני אזורי ציור על אותו קנבס: אחד על כל השטח, ואחד קטן יותר בתוכו. בדוגמה, הציר הפנימי מתחיל ב-[0.2, 0.5] ותופס 0.25 מרוחב הקנבס ו-0.25 מגובהו — כמו זום-אין. על כל ציר מגדירים כותרת וטווח בנפרד, עם שמות השיטות ועם קידומת set_: set_title, set_xlim ו-set_ylim.",
+        "code": "import matplotlib.pyplot as plt\nimport numpy as np\n\nx = np.linspace(0, 10, 50)\nfig = plt.figure(figsize=(6, 4))\nax_main = fig.add_axes([0, 0, 1, 1])\nax_zoom = fig.add_axes([0.2, 0.5, 0.25, 0.25])\nax_main.plot(x, x)\nax_zoom.plot(x, x ** 2)\nax_main.set_title('Linear')\nax_main.set_xlim(0, 10)\nax_main.set_ylim(0, 10)\nax_zoom.set_title('Zoom')\nax_zoom.set_xlim(0, 4)\nax_zoom.set_ylim(0, 16)\nprint(ax_main.get_title())\nprint(list(ax_zoom.get_xlim()))\nplt.close()",
+        "run": false,
+        "sample": "Linear\n[0.0, 4.0]"
+      }
+    ]
+  },
+  "matplotlib-subplots": {
+    "intro": "כאן בונים כמה גרפים באותו איור: תצורת רשת, כותרת משותפת, מקרא, עיצוב הקו, וסוגי תרשימים נפוצים — ומתי לבחור בכל אחד.",
+    "items": [
+      {
+        "term": "plt.subplots",
+        "title": "כמה תרשימים באיור אחד",
+        "text": "plt.subplots() (או plt.subplot()) מאפשר ליצור כמה גרפים על אותו קנבס. הפונקציה מחזירה שני דברים: אובייקט Figure — הקנבס של כל האיור, ומערך Axes — התרשימים הבודדים שעליהם מציירים את הנתונים.",
+        "code": "import matplotlib.pyplot as plt\n\nfig, axes = plt.subplots(1, 2)\nprint(type(fig).__name__)\nprint(len(axes))\nplt.close()",
+        "run": false,
+        "sample": "Figure\n2"
+      },
+      {
+        "term": "nrows / ncols",
+        "title": "רשת התרשימים וגישה לכל אחד",
+        "text": "nrows ו-ncols קובעים את פריסת הרשת. אם שניהם גדולים מ-1 מתקבל מטריצה דו-ממדית של Axes. במערך חד-ממדי ניגשים עם axes[i], ובמטריצה עם axes[row, col]. כך ממקמים כל גרף בתא משלו.",
+        "code": "import matplotlib.pyplot as plt\n\nfig, axes = plt.subplots(2, 2)\nprint(axes.shape)\nprint(axes[0, 1] is axes[0][1])\nplt.close()",
+        "run": false,
+        "sample": "(2, 2)\nTrue"
+      },
+      {
+        "term": "axes.shape",
+        "title": "לולאה לפי צורת הרשת",
+        "text": "axes.shape מחזיר צמד (nrows, ncols) — ממדי המטריצה. בשיעור עוברים על הרשת בלולאה כפולה: for i in range(rows): for j in range(cols): ואז ניגשים ל-axes[i, j]. כך מציירים בכל תא בנפרד בלי לחזור על הקוד. אפשר גם לשטח קודם עם axes.ravel(), אבל כאן נעבוד כמו בשיעור, לפי shape.",
+        "code": "import matplotlib.pyplot as plt\n\nfig, axes = plt.subplots(2, 2)\nrows, cols = axes.shape\ntitles = []\nfor i in range(rows):\n    for j in range(cols):\n        ax = axes[i, j]\n        ax.set_title('P' + str(i * cols + j + 1))\n        titles.append(ax.get_title())\nprint(axes.shape)\nprint(titles)\nplt.close()",
+        "run": false,
+        "sample": "(2, 2)\n['P1', 'P2', 'P3', 'P4']"
+      },
+      {
+        "term": "tight_layout / suptitle",
+        "title": "ריווח וכותרת כללית",
+        "text": "fig.tight_layout() מתאים אוטומטית את הרווחים בין הגרפים כדי שלא ייחתכו או יידרסו. אם רוצים שליטה ידנית: fig.subplots_adjust(left, right, top, bottom, wspace, hspace). fig.suptitle('כותרת', fontsize=...) מוסיף כותרת אחת לכל האיור, מעל כל התרשימים. לשמירה נקייה: fig.savefig('filename.png', bbox_inches='tight') — כולל כותרות ותוויות בלי חיתוך.",
+        "code": "import matplotlib.pyplot as plt\n\nfig, axes = plt.subplots(1, 2)\nfig.suptitle('Weekly report', fontsize=14)\nfig.tight_layout()\nprint(fig._suptitle.get_text())\nplt.close()",
+        "run": false,
+        "sample": "Weekly report"
+      },
+      {
+        "term": "legend",
+        "title": "מקרא לכמה סדרות",
+        "text": "כשמציירים כמה סדרות על אותו ציר, ax.legend() מציג מקרא. לכל סדרה מוסיפים label בפקודת הציור, למשל ax.plot(x, y, label='2024'). את המיקום קובעים עם loc=[x, y]: המספר הראשון הוא המיקום בציר X, והשני בציר Y. ערכים בין 0 ל-1 ממקמים את המקרא בתוך הגרף, וערכים גדולים מ-1 או קטנים מ-0 מוציאים אותו החוצה. למשל loc=[1.05, 0.3] שם את המקרא מעט מימין לתרשים.",
+        "code": "import matplotlib.pyplot as plt\n\nfig, ax = plt.subplots()\nax.plot([1, 2, 3], [1, 2, 3], label='A')\nax.plot([1, 2, 3], [3, 2, 1], label='B')\nloc = [1.05, 0.3]\nleg = ax.legend(loc=loc)\nprint([t.get_text() for t in leg.get_texts()])\nprint(loc)\nplt.close()",
+        "run": false,
+        "sample": "['A', 'B']\n[1.05, 0.3]"
+      },
+      {
+        "term": "color / lw / marker",
+        "title": "עיצוב הקו והנקודות",
+        "text": "פרמטרי עיצוב נפוצים: color — צבע הקו (שם, hex או RGB). lw או linewidth — עובי הקו ביחס לברירת המחדל: lw=10 הוא פי 10 מהעובי הרגיל, ו-lw=0.5 הוא חצי. ls או linestyle — סגנון הקו, למשל '-', '--', ':'. הקו נראה רציף כי Matplotlib מחבר בין נקודות הנתונים האמיתיות; marker מציג את הנקודות האלה, למשל 'o', '+', 'x', '>', '<', ו-markersize קובע את גודל הסימן.",
+        "code": "import matplotlib.pyplot as plt\n\nfig, ax = plt.subplots()\nline, = ax.plot([1, 2, 3], [1, 4, 2], color='crimson', lw=2, ls='--', marker='o', markersize=8)\nprint(line.get_linewidth())\nprint(line.get_linestyle())\nprint(line.get_marker())\nplt.close()",
+        "run": false,
+        "sample": "2.0\n--\no"
+      },
+      {
+        "term": "plot / bar / hist / scatter",
+        "title": "סוגי תרשימים ומתי להשתמש",
+        "text": "גרף קו (ax.plot(x, y)): מגמות לאורך זמן והשוואת סדרות. ציר X לזמן, ציר Y לערכים. גרף עמודות (ax.bar(categories, values)): השוואת ערכים בין קטגוריות בדידות. היסטוגרמה (ax.hist(data, bins=n)): התפלגות של משתנה רציף, בלי רווחים בין העמודות; bins קובע את רמת הפירוט (יותר תאים = יותר פרטים, וגם יותר רעש). גרף פיזור (ax.scatter(x, y)): קשר בין שני משתנים, X בלתי תלוי ו-Y תלוי. גרף עוגה מתאים לחלקים מתוך שלם, בדרך כלל ל-3 עד 7 קטגוריות.",
+        "code": "import matplotlib.pyplot as plt\n\nfig, axes = plt.subplots(1, 3)\naxes[0].plot([1, 2, 3], [1, 4, 2])\naxes[1].bar(['A', 'B'], [10, 20])\nvals, bins, _ = axes[2].hist([1, 1, 2, 2, 2, 3], bins=3)\nprint(list(map(int, vals)))\nplt.close()",
+        "run": false,
+        "sample": "[2, 3, 1]"
+      },
+      {
+        "term": "2x2 subplot",
+        "title": "ארבעה גרפים באיור אחד",
+        "text": "דוגמה מלאה לרשת 2×2: גרף קו, פיזור, עמודות והיסטוגרמה באותו איור. np.random.seed(0) קובע את מחולל המספרים האקראיים, כדי שכולם יקבלו את אותם נתונים ואותו תרשים. ניגשים לכל תא עם axes[row, col], כמו בשיעור.",
+        "code": "import matplotlib.pyplot as plt\nimport numpy as np\n\nnp.random.seed(0)\nfig, axes = plt.subplots(2, 2)\naxes[0, 0].plot(np.arange(10), np.arange(10))\naxes[0, 1].scatter(np.random.randn(40), np.random.randn(40))\naxes[1, 0].bar(['A', 'B', 'C'], [3, 7, 5])\nvals, bins, _ = axes[1, 1].hist(np.random.randn(80), bins=8)\nprint(axes.shape)\nprint(len(vals))\nplt.close()",
+        "run": false,
+        "sample": "(2, 2)\n8"
+      }
+    ]
   }
 };
 

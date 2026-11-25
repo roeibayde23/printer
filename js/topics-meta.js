@@ -50,7 +50,10 @@
     "pandas-dataframe":  { accent: "#1A2340", soft: "#e6e8ee" },
     "pandas-select":     { accent: "#1A2340", soft: "#e6e8ee" },
     "pandas-transform":  { accent: "#1A2340", soft: "#e6e8ee" },
-    "pandas-missing":    { accent: "#1A2340", soft: "#e6e8ee" }
+    "pandas-missing":    { accent: "#1A2340", soft: "#e6e8ee" },
+    "pandas-groupby":    { accent: "#1A2340", soft: "#e6e8ee" },
+    "pandas-pivot":      { accent: "#1A2340", soft: "#e6e8ee" },
+    "matplotlib-subplots": { accent: "#1A2340", soft: "#e6e8ee" }
   };
 
   const VOCAB_META = {
@@ -61,6 +64,7 @@
     env:               { accent: "#1A2340", soft: "#e6e8ee" },
     numpy:             { accent: "#1A2340", soft: "#e6e8ee" },
     pandas:            { accent: "#1A2340", soft: "#e6e8ee" },
+    matplotlib:        { accent: "#1A2340", soft: "#e6e8ee" },
     general:           { accent: "#1A2340", soft: "#e6e8ee" }
   };
 
@@ -85,7 +89,8 @@
       { id: "basics", title: "יסודות", topics: ["datascience"] },
       { id: "env", title: "סביבת עבודה", topics: ["libraries", "jupyter"] },
       { id: "numpy", title: "NumPy", topics: ["numpy-intro", "numpy-random", "numpy-index", "numpy-ops"] },
-      { id: "pandas", title: "Pandas", topics: ["pandas-series", "pandas-dataframe", "pandas-select", "pandas-transform", "pandas-missing"] }
+      { id: "pandas", title: "Pandas", topics: ["pandas-series", "pandas-dataframe", "pandas-select", "pandas-transform", "pandas-missing", "pandas-groupby", "pandas-pivot"] },
+      { id: "matplotlib", title: "Matplotlib", topics: ["matplotlib-subplots"] }
     ],
     vocab: [
       { id: "sql-keywords", title: "מילות מפתח וסעיפים ב-SQL", topics: ["sql-keywords"] },
@@ -95,6 +100,7 @@
       { id: "env", title: "סביבת עבודה", topics: ["env"] },
       { id: "numpy", title: "NumPy", topics: ["numpy"] },
       { id: "pandas", title: "Pandas", topics: ["pandas"] },
+      { id: "matplotlib", title: "Matplotlib", topics: ["matplotlib"] },
       { id: "general", title: "מושגים כלליים", topics: ["general"] }
     ]
   };

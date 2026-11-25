@@ -3252,6 +3252,33 @@
         "type": "write"
       }
     ]
+  },
+{
+    "id": "pandas-groupby",
+    "title": "הרצאה 22 · קיבוץ ו-MultiIndex",
+    "short": "הרצאה 22",
+    "icon": "22",
+    "intro": "קיבוץ לפי עמודה או כמה עמודות, MultiIndex, חתך ב-xs, סיכומים, צרוף טבלאות, מחרוזות ותאריכים.",
+    "practice": false,
+    "questions": []
+  },
+  {
+    "id": "pandas-pivot",
+    "title": "הרצאה 23 · טבלאות ציר ומבוא ל-Matplotlib",
+    "short": "הרצאה 23",
+    "icon": "23",
+    "intro": "טבלת ציר ב-Pandas, ייצוא לקובץ, ומבוא לציור גרפים ב-Matplotlib.",
+    "practice": false,
+    "questions": []
+  },
+  {
+    "id": "matplotlib-subplots",
+    "title": "הרצאה 24 · גרפים מרובים ב-Matplotlib",
+    "short": "הרצאה 24",
+    "icon": "24",
+    "intro": "כמה תרשימים באיור אחד, כותרת משותפת, מקרא, עיצוב הקו וסוגי גרפים נפוצים.",
+    "practice": false,
+    "questions": []
   }
 ];
 

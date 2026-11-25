@@ -101,17 +101,57 @@
     }
   }
 
-  function fillsOk(q, values) {
+  function fillsOk(q, values, dfName) {
     const vals = Array.isArray(values) ? values : [values];
     if (!q) return false;
-    if (q.acceptAnyName && acceptAnyNameOk(q, vals)) return true;
-    if (q.blanks && q.blanks.length && valuesMatchBlanks(q, vals)) return true;
-    if (looksLikeFilledTemplate(q, vals.join(" "))) return true;
+    const name = isValidDfName(dfName) ? dfName : "df";
+    const canonVals = name === "df" ? vals : vals.map((v) => canonicalizeDfName(v, name));
+    if (q.acceptAnyName && (acceptAnyNameOk(q, canonVals) || acceptAnyNameOk(q, vals))) return true;
+    if (q.blanks && q.blanks.length && (valuesMatchBlanks(q, canonVals) || valuesMatchBlanks(q, vals))) return true;
+    if (looksLikeFilledTemplate(q, canonVals.join(" ")) || looksLikeFilledTemplate(q, vals.join(" "))) return true;
+    if (canonVals.some((v) => looksLikeFilledTemplate(q, v))) return true;
     if (vals.some((v) => looksLikeFilledTemplate(q, v))) return true;
     return false;
   }
 
-  const Quiz = { SESSION_SIZE, MIN_WRITES, TARGET_WRITES, shuffle, pickQuiz, normalizeFill, filledTemplates, fillsOk };
+  const PY_KEYWORDS = {
+    False: 1, None: 1, True: 1, and: 1, as: 1, assert: 1, async: 1, await: 1,
+    break: 1, class: 1, continue: 1, def: 1, del: 1, elif: 1, else: 1, except: 1,
+    finally: 1, for: 1, from: 1, global: 1, if: 1, import: 1, in: 1, is: 1,
+    lambda: 1, match: 1, case: 1, nonlocal: 1, not: 1, or: 1, pass: 1, raise: 1,
+    return: 1, try: 1, while: 1, with: 1, yield: 1
+  };
+
+  function isValidDfName(name) {
+    return typeof name === "string" && name.length > 0 && name.length <= 40
+      && /^[A-Za-z_][A-Za-z0-9_]*$/.test(name) && !Object.prototype.hasOwnProperty.call(PY_KEYWORDS, name);
+  }
+
+  function escapeRegExp(s) {
+    return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function replaceIdent(text, from, to) {
+    const src = text == null ? "" : String(text);
+    if (!from || from === to) return src;
+    const re = new RegExp("(^|[^A-Za-z0-9_])" + escapeRegExp(from) + "(?![A-Za-z0-9_])", "g");
+    return src.replace(re, function (_, p) { return p + to; });
+  }
+
+  function applyDfName(text, name) {
+    const n = isValidDfName(name) ? name : "df";
+    return replaceIdent(text, "df", n);
+  }
+
+  function canonicalizeDfName(text, name) {
+    const n = isValidDfName(name) ? name : "df";
+    return replaceIdent(text, n, "df");
+  }
+
+  const Quiz = {
+    SESSION_SIZE, MIN_WRITES, TARGET_WRITES, shuffle, pickQuiz, normalizeFill,
+    filledTemplates, fillsOk, isValidDfName, applyDfName, canonicalizeDfName, replaceIdent
+  };
   root.Quiz = Quiz;
   if (typeof module !== "undefined" && module.exports) module.exports = Quiz;
 })(typeof window !== "undefined" ? window : globalThis);
